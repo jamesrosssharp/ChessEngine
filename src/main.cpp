@@ -89,6 +89,18 @@ int main(int argc, char** argv)
                             SDL_SetWindowFullscreen(window, window_flags);
                         }
                         break;
+                    case 'a':
+                        break;
+                    case 'b':
+                        break;
+                    case SDLK_UP:
+                        break;
+                    case SDLK_DOWN:
+                        break;
+                    case SDLK_LEFT:
+                        break;
+                    case SDLK_RIGHT:
+                        break;
                     default:
                         break;
                 }

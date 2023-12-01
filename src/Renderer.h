@@ -87,5 +87,8 @@ class Renderer {
         struct RenderSprite m_chessmen_white[16];
         struct RenderSprite m_chessmen_black[16];
 
+        int m_highlighted_square_x = 0;
+        int m_highlighted_square_y = 0;
+
 };
 

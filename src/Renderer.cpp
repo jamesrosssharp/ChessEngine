@@ -92,6 +92,35 @@ float Renderer::renderScene(int w, int h)
         }    
     }
 
+    // Draw currently highlighted square
+
+
+    {
+        float x1 = m_highlighted_square_x/4.0 - 1.0 + 0.001;
+        float y1 = m_highlighted_square_y/4.0 - 1.0 + 0.001;
+        float x2 = (m_highlighted_square_x + 1)/4.0 - 1.0 - 0.001;
+        float y2 = (m_highlighted_square_y + 1)/4.0 - 1.0 - 0.001;
+        
+        glBegin(GL_LINES);
+        glColor3f(1.0, 0.49, 0.0);
+        
+        glVertex2f(x1, y1);
+        glVertex2f(x2, y1);
+    
+        glVertex2f(x2, y1);
+        glVertex2f(x2, y2);
+        
+        glVertex2f(x2, y2);
+        glVertex2f(x1, y2);
+        
+        glVertex2f(x1, y2);
+        glVertex2f(x1, y1);
+        
+        glEnd();
+
+    }
+
+    glColor4f(1.0, 1.0, 1.0, 1.0); 
     glEnable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND); //Enable blending.
