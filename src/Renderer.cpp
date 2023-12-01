@@ -46,7 +46,11 @@ Renderer::Renderer()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-
+    for (int i = 0; i < 16; i++)
+    {
+        m_chessmen_white[i].visible = false;
+        m_chessmen_black[i].visible = false;
+    }
 }
 
 Renderer::~Renderer()
@@ -60,24 +64,106 @@ float Renderer::renderScene(int w, int h)
 
     glViewport(0, 0, w, h); 
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f );
+    glClearColor(0.1f, 0.1f, 0.1f, 0.1f );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glDisable(GL_TEXTURE_2D);
+
+    for (int x = 0; x < 8; x++)
+    {
+        for (int y = 0; y < 8; y++)
+        {
+            if ((x + y) % 2 == 0)
+                continue;
+
+            float x1 = -1 + x/4.0;
+            float x2 = -1 + (x+1)/4.0;
+            float y1 = -1 + y/4.0;
+            float y2 = -1 + (y+1)/4.0;
+
+            glBegin(GL_QUADS);
+            glColor3f(0.9, 0.9, 0.9);
+            glVertex2f(x1, y1);
+            glVertex2f(x2, y1);
+            glVertex2f(x2, y2);
+            glVertex2f(x1, y2);
+            glEnd();
+
+        }    
+    }
+
+    glEnable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND); //Enable blending.
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Set blending function.
  
-    glBegin(GL_QUADS);
+    for (int i = 0; i < 16; i++)
+    {
+        renderSprite(&m_chessmen_white[i], true);
+        renderSprite(&m_chessmen_black[i], false);
 
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex2f(-1, -1);
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex2f(1, -1);
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex2f(1, 1);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex2f(-1, 1);
+    }
 
-    glEnd();
+    glDisable(GL_BLEND);
 
     return 0.0;
-} 
+}
+
+void Renderer::resetBoard()
+{
+    // Set up white pawns
+    m_chessmen_white[0].visible = true;
+    m_chessmen_white[0].x = -1;
+    m_chessmen_white[0].y = -0.75;
+    m_chessmen_white[0].sprite_type = TYPE_PAWN;
+}
+
+void Renderer::renderSprite(struct RenderSprite* sp, bool white)
+{
+    double u1, u2;
+    double v1, v2;
+    double x1, x2;
+    double y1, y2;
+
+
+    if (!sp->visible) return;
+
+    x1 = sp->x;
+    x2 = sp->x + 1/4.0;
+    y1 = sp->y;
+    y2 = sp->y + 1/4.0;
+
+    switch (sp->sprite_type)
+    {
+        case TYPE_PAWN:
+                u1 = 5.0 / 6.0;
+                u2 = 1.0;
+                break;
+        default: 
+                break;        
+    };
+
+    if (white)
+    {
+        v1 = 0;
+        v2 = 1 / 2.0;
+    }
+    else
+    {
+        v1 = 1 / 2.0;
+        v2 = 2 / 2.0;
+    }
+
+    glBegin(GL_QUADS);
+
+        glTexCoord2f(u1, v1);
+        glVertex2f(x2, y2);
+        glTexCoord2f(u2, v1);
+        glVertex2f(x1, y2);
+        glTexCoord2f(u2, v2);
+        glVertex2f(x1, y1);
+        glTexCoord2f(u1, v2);
+        glVertex2f(x2, y1);
+
+    glEnd();
+}

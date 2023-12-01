@@ -38,6 +38,26 @@ SOFTWARE.
 #include <GL/glext.h>
 #include <GL/glcorearb.h>
 
+enum RenderSpriteType {
+    TYPE_PAWN   = 0,
+    TYPE_KNIGHT = 1,
+    TYPE_BISHOP = 2,
+    TYPE_ROOK   = 3,
+    TYPE_KING   = 4,
+    TYPE_QUEEN  = 5
+};
+
+struct RenderSprite 
+{
+    enum RenderSpriteType sprite_type;
+    double x;
+    double y;
+    double vx;
+    double vy;
+    int frames;
+    bool visible;
+};
+
 class Renderer {
 
     public:
@@ -46,11 +66,26 @@ class Renderer {
 
         float renderScene(int w, int h);
 
+        void resetBoard();
+
     private:
+
+        void renderSprite(struct RenderSprite* sp, bool white);
 
         static constexpr int kChessMenTexture       = 0;
         static constexpr int kNumTextures           = 1;
 
         GLuint m_textures[kNumTextures];
+
+        static constexpr int kPawns     = 0;
+        static constexpr int kBishops   = 8;
+        static constexpr int kKnights   = 10;
+        static constexpr int kRooks     = 12;
+        static constexpr int kKing      = 14;
+        static constexpr int kQueen     = 15;
+
+        struct RenderSprite m_chessmen_white[16];
+        struct RenderSprite m_chessmen_black[16];
+
 };
 

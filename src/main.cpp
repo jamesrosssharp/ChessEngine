@@ -61,6 +61,8 @@ int main(int argc, char** argv)
 
     Renderer r;
 
+    r.resetBoard();
+
     bool running = true;
     bool full_screen = false;
 
