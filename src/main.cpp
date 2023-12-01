@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     }
 
     std::uint32_t window_flags = SDL_WINDOW_OPENGL;
-    SDL_Window *window = SDL_CreateWindow("slurmemu-ng", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
+    SDL_Window *window = SDL_CreateWindow("ChessEngine", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
   
     SDL_GLContext Context = SDL_GL_CreateContext(window);
 
