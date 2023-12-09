@@ -32,38 +32,79 @@ SOFTWARE.
 
 #include "UI.h"
 
-UI::UI()    :
+#include <cstdio>
+
+UI::UI(Renderer* r)    :
     m_highlighted_x(0),
-    m_highlighted_y(0)
+    m_highlighted_y(0),
+    m_renderer(r),
+    m_square_selected(false),
+    m_selected_square_x(0),
+    m_selected_square_y(0)
 {
     
 }
 
 void UI::handleLeftKeyDown()
 {
-
     if (m_highlighted_x > 0)
         m_highlighted_x --;
-
+    m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
 }
 
 void UI::handleRightKeyDown()
 {
-
-
+    if (m_highlighted_x < 7)
+        m_highlighted_x ++;
+    m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
 }
 
 void UI::handleUpKeyDown()
 {
-
-
+    if (m_highlighted_y < 7)
+        m_highlighted_y ++;
+    m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
 }
 
 void UI::handleDownKeyDown()
 {
-
-
+    if (m_highlighted_y > 0)
+        m_highlighted_y --;
+    m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
 }
 
+void UI::handleAKeyDown()
+{
+    if (m_square_selected)
+    {
+        // If user already selected this square, deselect it 
+        if ((m_selected_square_x == m_highlighted_x) && (m_selected_square_y == m_highlighted_y))
+        {
+            m_square_selected = false;
+        }
+        else
+        {
+            printf("Move from %d,%d to %d,%d\n", m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
+        
+            // Check if move if legal
 
+            // Not legal - queue "Illegal move" to speech synth
 
+            // Legal - make move in renderer, and pass to engine to get response
+
+        }
+    }
+    else
+    {
+        m_square_selected = true;
+        m_selected_square_x = m_highlighted_x;
+        m_selected_square_y = m_highlighted_y;
+    } 
+
+    m_renderer->setSelectedSquare(m_square_selected, m_selected_square_x, m_selected_square_y);
+}
+
+void UI::handleBKeyDown()
+{
+
+}

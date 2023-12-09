@@ -31,23 +31,33 @@ SOFTWARE.
 
 #pragma once
 
+#include "Renderer.h"
+
 class UI
 {
     public:
         
-        UI();
+        UI(Renderer* r);
 
         void handleLeftKeyDown();
         void handleRightKeyDown();
         void handleUpKeyDown();
         void handleDownKeyDown();
+        void handleAKeyDown();
+        void handleBKeyDown();
+
 
     private:
 
-        int m_highlighted_x;
-        int m_highlighted_y;
+        int     m_highlighted_x;
+        int     m_highlighted_y;
 
-        bool m_is_active;
+        bool    m_is_active;
 
+        Renderer* m_renderer;
+
+        int     m_selected_square_x;
+        int     m_selected_square_y;
+        bool    m_square_selected;
 };
 

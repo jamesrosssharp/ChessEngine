@@ -42,6 +42,7 @@ SOFTWARE.
 #define WINDOW_HEIGHT 	854
 
 #include "Renderer.h"
+#include "UI.h"
 
 int main(int argc, char** argv)
 {
@@ -60,6 +61,7 @@ int main(int argc, char** argv)
     (void)Context;
 
     Renderer r;
+    UI       u(&r);
 
     r.resetBoard();
 
@@ -90,16 +92,22 @@ int main(int argc, char** argv)
                         }
                         break;
                     case 'a':
+                        u.handleAKeyDown();
                         break;
                     case 'b':
+                        u.handleBKeyDown();
                         break;
                     case SDLK_UP:
+                        u.handleUpKeyDown();
                         break;
                     case SDLK_DOWN:
+                        u.handleDownKeyDown();
                         break;
                     case SDLK_LEFT:
+                        u.handleLeftKeyDown();
                         break;
                     case SDLK_RIGHT:
+                        u.handleRightKeyDown();
                         break;
                     default:
                         break;

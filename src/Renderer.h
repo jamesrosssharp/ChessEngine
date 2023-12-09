@@ -68,6 +68,10 @@ class Renderer {
 
         void resetBoard();
 
+        void setHighlightedSquare(int x, int y);
+
+        void setSelectedSquare(bool squareSelected, int x, int y);
+
     private:
 
         void renderSprite(struct RenderSprite* sp, bool white);
@@ -89,6 +93,11 @@ class Renderer {
 
         int m_highlighted_square_x = 0;
         int m_highlighted_square_y = 0;
+
+        bool m_square_selected = false;
+        int  m_selected_square_x = 0;
+        int  m_selected_square_y = 0;
+
 
 };
 

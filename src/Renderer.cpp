@@ -94,31 +94,64 @@ float Renderer::renderScene(int w, int h)
 
     // Draw currently highlighted square
 
-
     {
-        float x1 = m_highlighted_square_x/4.0 - 1.0 + 0.001;
-        float y1 = m_highlighted_square_y/4.0 - 1.0 + 0.001;
-        float x2 = (m_highlighted_square_x + 1)/4.0 - 1.0 - 0.001;
-        float y2 = (m_highlighted_square_y + 1)/4.0 - 1.0 - 0.001;
+        float x1 = m_highlighted_square_x/4.0 - 1.0 ;
+        float y1 = m_highlighted_square_y/4.0 - 1.0 ;
+        float x2 = (m_highlighted_square_x + 1)/4.0 - 1.0;
+        float y2 = (m_highlighted_square_y + 1)/4.0 - 1.0;
+       
+        float x3 = m_highlighted_square_x/4.0 - 1.0 + 0.01;
+        float y3 = m_highlighted_square_y/4.0 - 1.0 + 0.01;
+        float x4 = (m_highlighted_square_x + 1)/4.0 - 1.0 - 0.01;
+        float y4 = (m_highlighted_square_y + 1)/4.0 - 1.0 - 0.01;
         
-        glBegin(GL_LINES);
+        glBegin(GL_QUADS);
+        glColor3f(1.0, 0.49, 0.0);
+        
+        glVertex2f(x1, y1);
+        glVertex2f(x3, y3);
+        glVertex2f(x3, y4);
+        glVertex2f(x1, y2);
+
+        glVertex2f(x1, y1);
+        glVertex2f(x2, y1);
+        glVertex2f(x4, y3);
+        glVertex2f(x3, y3);
+
+        glVertex2f(x4, y3);
+        glVertex2f(x2, y1);
+        glVertex2f(x2, y2);
+        glVertex2f(x4, y4);
+
+        glVertex2f(x3, y4);
+        glVertex2f(x4, y4);
+        glVertex2f(x2, y2);
+        glVertex2f(x1, y2);
+
+        glEnd();
+
+    }
+
+    // Draw currently selected square
+    
+    if (m_square_selected) {
+        float x1 = m_selected_square_x/4.0 - 1.0 ;
+        float y1 = m_selected_square_y/4.0 - 1.0 ;
+        float x2 = (m_selected_square_x + 1)/4.0 - 1.0;
+        float y2 = (m_selected_square_y + 1)/4.0 - 1.0;
+       
+        glBegin(GL_QUADS);
         glColor3f(1.0, 0.49, 0.0);
         
         glVertex2f(x1, y1);
         glVertex2f(x2, y1);
-    
-        glVertex2f(x2, y1);
-        glVertex2f(x2, y2);
-        
         glVertex2f(x2, y2);
         glVertex2f(x1, y2);
-        
-        glVertex2f(x1, y2);
-        glVertex2f(x1, y1);
-        
-        glEnd();
 
+        glEnd();
     }
+
+    // Draw chessmen
 
     glColor4f(1.0, 1.0, 1.0, 1.0); 
     glEnable(GL_TEXTURE_2D);
@@ -350,3 +383,21 @@ void Renderer::renderSprite(struct RenderSprite* sp, bool white)
 
     glEnd();
 }
+
+void Renderer::setHighlightedSquare(int x, int y)
+{
+
+    m_highlighted_square_x = x;
+    m_highlighted_square_y = y; 
+
+}
+
+void Renderer::setSelectedSquare(bool squareSelected, int x, int y)
+{
+
+    m_selected_square_x = x;
+    m_selected_square_y = y;
+    m_square_selected   = squareSelected;
+
+}
+
