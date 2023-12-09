@@ -32,12 +32,13 @@ SOFTWARE.
 #pragma once
 
 #include "Renderer.h"
+#include "Chess.h"
 
 class UI
 {
     public:
         
-        UI(Renderer* r);
+        UI(Renderer* r, Chess* ch);
 
         void handleLeftKeyDown();
         void handleRightKeyDown();
@@ -59,5 +60,9 @@ class UI
         int     m_selected_square_x;
         int     m_selected_square_y;
         bool    m_square_selected;
+
+        bool    m_legal_moves[8][8];
+
+        Chess*  m_ch;
 };
 

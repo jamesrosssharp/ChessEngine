@@ -34,13 +34,14 @@ SOFTWARE.
 
 #include <cstdio>
 
-UI::UI(Renderer* r)    :
+UI::UI(Renderer* r, Chess* ch)    :
     m_highlighted_x(0),
     m_highlighted_y(0),
     m_renderer(r),
     m_square_selected(false),
     m_selected_square_x(0),
-    m_selected_square_y(0)
+    m_selected_square_y(0),
+    m_ch(ch)
 {
     
 }
@@ -81,6 +82,10 @@ void UI::handleAKeyDown()
         if ((m_selected_square_x == m_highlighted_x) && (m_selected_square_y == m_highlighted_y))
         {
             m_square_selected = false;
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                    m_legal_moves[i][j] = false;
+
         }
         else
         {
@@ -99,9 +104,12 @@ void UI::handleAKeyDown()
         m_square_selected = true;
         m_selected_square_x = m_highlighted_x;
         m_selected_square_y = m_highlighted_y;
+        m_ch->getLegalMovesForSquare(m_highlighted_x, m_highlighted_y, &m_legal_moves[0][0]);
     } 
 
     m_renderer->setSelectedSquare(m_square_selected, m_selected_square_x, m_selected_square_y);
+    m_renderer->setLegalMoves(&m_legal_moves[0][0]); 
+
 }
 
 void UI::handleBKeyDown()

@@ -43,6 +43,7 @@ SOFTWARE.
 
 #include "Renderer.h"
 #include "UI.h"
+#include "Chess.h"
 
 int main(int argc, char** argv)
 {
@@ -61,7 +62,8 @@ int main(int argc, char** argv)
     (void)Context;
 
     Renderer r;
-    UI       u(&r);
+    Chess    ch;
+    UI       u(&r, &ch);
 
     r.resetBoard();
 

@@ -33,6 +33,8 @@ SOFTWARE.
 
 #include "chess_piece_texture.h"
 
+#include <string.h>
+
 Renderer::Renderer()
 {
     glEnable(GL_TEXTURE_2D);
@@ -51,6 +53,10 @@ Renderer::Renderer()
         m_chessmen_white[i].visible = false;
         m_chessmen_black[i].visible = false;
     }
+
+    for (int i = 0; i < 8; i++)
+        for (int j = 0; j < 8; j++)
+            m_legal_moves[i][j] = false;
 }
 
 Renderer::~Renderer()
@@ -131,7 +137,9 @@ float Renderer::renderScene(int w, int h)
         glEnd();
 
     }
-
+    glEnable(GL_BLEND); //Enable blending.
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Set blending function.
+ 
     // Draw currently selected square
     
     if (m_square_selected) {
@@ -141,7 +149,7 @@ float Renderer::renderScene(int w, int h)
         float y2 = (m_selected_square_y + 1)/4.0 - 1.0;
        
         glBegin(GL_QUADS);
-        glColor3f(1.0, 0.49, 0.0);
+        glColor4f(1.0, 0.49, 0.0, 0.7);
         
         glVertex2f(x1, y1);
         glVertex2f(x2, y1);
@@ -151,14 +159,41 @@ float Renderer::renderScene(int w, int h)
         glEnd();
     }
 
+    // Draw legal moves
+
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+
+            if (m_legal_moves[j][i])
+            {
+
+                float x1 = i/4.0 - 1.0 ;
+                float y1 = j/4.0 - 1.0 ;
+                float x2 = (i + 1)/4.0 - 1.0;
+                float y2 = (j + 1)/4.0 - 1.0;
+               
+                glBegin(GL_QUADS);
+                glColor4f(0.89, 0.79, 0.29, 0.7);
+                
+                glVertex2f(x1, y1);
+                glVertex2f(x2, y1);
+                glVertex2f(x2, y2);
+                glVertex2f(x1, y2);
+
+                glEnd();
+            }
+
+        }
+    }
+
     // Draw chessmen
 
     glColor4f(1.0, 1.0, 1.0, 1.0); 
     glEnable(GL_TEXTURE_2D);
 
-    glEnable(GL_BLEND); //Enable blending.
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Set blending function.
- 
+
     for (int i = 0; i < 16; i++)
     {
         renderSprite(&m_chessmen_white[i], true);
@@ -401,3 +436,7 @@ void Renderer::setSelectedSquare(bool squareSelected, int x, int y)
 
 }
 
+void Renderer::setLegalMoves(bool* legalMoves)
+{
+    memcpy(&m_legal_moves[0][0], legalMoves, sizeof(m_legal_moves));
+}

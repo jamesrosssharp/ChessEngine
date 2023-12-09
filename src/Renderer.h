@@ -72,6 +72,8 @@ class Renderer {
 
         void setSelectedSquare(bool squareSelected, int x, int y);
 
+        void setLegalMoves(bool* legalMoves);
+
     private:
 
         void renderSprite(struct RenderSprite* sp, bool white);
@@ -98,6 +100,7 @@ class Renderer {
         int  m_selected_square_x = 0;
         int  m_selected_square_y = 0;
 
+        bool m_legal_moves[8][8];
 
 };
 
