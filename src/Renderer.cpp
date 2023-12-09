@@ -480,7 +480,7 @@ void Renderer::setLegalMoves(bool* legalMoves)
     memcpy(&m_legal_moves[0][0], legalMoves, sizeof(m_legal_moves));
 }
 
-void Renderer::movePiece(int x1, int y1, int x2, int y2)
+void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep)
 {
     // Find out which piece is on the square
 
@@ -497,12 +497,19 @@ void Renderer::movePiece(int x1, int y1, int x2, int y2)
 
     RenderSprite* end_piece = nullptr;
 
+    int yy = y2;
+
+    if (ep)
+    {
+        yy = y1;
+    }
+
     for (int i = 0; i < kNChessmen; i++)
     {
         end_piece = &m_chessmen_white[i];
-        if ((end_piece->grid_x == x2) && (end_piece->grid_y == y2) && end_piece->visible) break;
+        if ((end_piece->grid_x == x2) && (end_piece->grid_y == yy) && end_piece->visible) break;
         end_piece = &m_chessmen_black[i];
-        if ((end_piece->grid_x == x2) && (end_piece->grid_y == y2) && end_piece->visible) break;
+        if ((end_piece->grid_x == x2) && (end_piece->grid_y == yy) && end_piece->visible) break;
         end_piece = nullptr;
     }
 

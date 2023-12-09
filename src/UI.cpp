@@ -98,8 +98,8 @@ void UI::handleAKeyDown()
             else 
             {
                 // Legal - make move in renderer, and pass to engine to get response
-                m_renderer->movePiece(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
-                m_ch->makeMove(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
+                bool ep = m_ch->makeMove(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
+                m_renderer->movePiece(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y, ep);
                 clearLegalMoves();
                 m_square_selected = false;
             }    

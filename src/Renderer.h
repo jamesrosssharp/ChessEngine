@@ -76,7 +76,7 @@ class Renderer {
 
         void setLegalMoves(bool* legalMoves);
 
-        void movePiece(int x1, int y1, int x2, int y2);
+        void movePiece(int x1, int y1, int x2, int y2, bool ep);
 
     private:
 

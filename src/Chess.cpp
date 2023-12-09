@@ -36,7 +36,7 @@ SOFTWARE.
 #include <vector>
 
 const std::vector<std::pair<int, int>> knightMoves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
-
+const std::vector<std::pair<int, int>> pawnCaptures = {{-1, 1}, {1, 1}};
 
 Chess::Chess()
 {
@@ -63,6 +63,8 @@ void Chess::resetBoard()
     m_board.blackQueensBoard    = 0x0800'0000'0000'0000; 
 
     m_isWhitesTurn = true;
+
+    m_can_en_passant_file = INVALID_FILE;
 }
 
 void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
@@ -83,6 +85,9 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
     switch(piece)
     {
         case WHITE_PAWN:
+        case BLACK_PAWN:
+        {
+            int multiplier = (piece == WHITE_PAWN) ? 1 : -1;
 
             // White pawn can move in increasing y 1 or two squares.
             // TODO: En passant, capturing
@@ -93,36 +98,51 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
 
                 // Check if blocked by a piece
 
-                if (getPieceForSquare(x, y + i) != NO_PIECE) continue;
+                if (getPieceForSquare(x, y + i*multiplier) != NO_PIECE) break;
+
+                // We can only move 2 squares on first move.
+
+                if ((piece == WHITE_PAWN) && (i == 2) && (y != 1)) break;
+                if ((piece == BLACK_PAWN) && (i == 2) && (y != 6)) break;
 
                 // If not, we can move here.
 
-                moveSquares[x + (y + i)*8] = true;   
+                moveSquares[x + (y + i*multiplier)*8] = true;   
             }
 
             // Simple capturing
-        
+       
+            for (auto p : pawnCaptures)
+            {
+                int xx = x + p.first;
+                int yy = y + p.second*multiplier;
+
+                if (xx < 0) continue;
+                if (xx > 7) continue;
+                if ((piece == WHITE_PAWN) && !(getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
+                if ((piece == BLACK_PAWN) && !(getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
+
+                moveSquares[xx + yy*8] = true;
+            }
+
             // En passant
 
-            break;
-        case BLACK_PAWN:
-
-            // Black pawn can move in decreasing y 1 or two squares.
-            // TODO: En passant, capturing
-
-            // Simple moves
-            for (int i = 1; i <= 2; i++)
+            for (auto p : pawnCaptures)
             {
+                int xx = x + p.first;
+                int yy = y + p.second*multiplier;
+           
+                if (xx < 0) continue;
+                if (xx > 7) continue;
+            
+                if (! ( ((piece == WHITE_PAWN) && (m_can_en_passant_file == xx) && (getPieceForSquare(xx, yy - multiplier) & BLACK_PIECES)) ||
+                        ((piece == BLACK_PAWN) && (m_can_en_passant_file == xx) && (getPieceForSquare(xx, yy - multiplier) & WHITE_PIECES)) )) continue;
 
-                // Check if blocked by a piece
-
-                if (getPieceForSquare(x, y - i) != NO_PIECE) continue;
-
-                // If not, we can move here.
-
-                moveSquares[x + (y - i)*8] = true;   
+                moveSquares[xx + yy*8] = true;
             }
+
             break;
+        }
         case WHITE_KNIGHT:
         case BLACK_KNIGHT:
 
@@ -350,8 +370,10 @@ void Chess::addPieceToSquare(enum PieceTypes type, int x, int y)
 
 }
 
-void Chess::makeMove(int x1, int y1, int x2, int y2)
+bool Chess::makeMove(int x1, int y1, int x2, int y2)
 {
+
+    bool ep = false;
 
     enum PieceTypes start_piece = getPieceForSquare(x1, y1);
     enum PieceTypes end_piece   = getPieceForSquare(x1, y1);
@@ -364,9 +386,32 @@ void Chess::makeMove(int x1, int y1, int x2, int y2)
         removePieceFromSquare(end_piece, x2, y2);
     }
 
+    // If this is an en passant pawn capture, need to remove captured en passant pawn
+    int yy = (start_piece == WHITE_PAWN) ? y2 - 1 : y2 + 1;
+
+    if (
+        ((start_piece == WHITE_PAWN) && (x2 != x1) && (m_can_en_passant_file == x2) && (getPieceForSquare(x2, yy) == BLACK_PAWN)) ||
+        ((start_piece == BLACK_PAWN) && (x2 != x1) && (m_can_en_passant_file == x2) && (getPieceForSquare(x2, yy) == WHITE_PAWN)))
+    {
+        end_piece = getPieceForSquare(x2, yy);
+        removePieceFromSquare(end_piece, x2, yy); 
+        ep = true;
+    }
+
+    // If this move is a first move of a pawn, update "can_enpassant_file"
+    if (((start_piece == WHITE_PAWN) && (y1 == 1) && (y2 == 3)) ||
+        ((start_piece == BLACK_PAWN) && (y1 == 6) && (y2 == 4)))
+    {
+        m_can_en_passant_file = x1;
+    }
+    else
+        m_can_en_passant_file = INVALID_FILE;
+
     removePieceFromSquare(start_piece, x1, y1);
     addPieceToSquare(start_piece, x2, y2);
 
     printBoard();
+
+    return ep;
 }
 

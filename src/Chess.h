@@ -54,6 +54,18 @@ enum PieceTypes {
     BLACK_PIECES    = BLACK_PAWN | BLACK_KNIGHT | BLACK_BISHOP | BLACK_ROOK | BLACK_KING | BLACK_QUEEN
 }; 
 
+enum Files {
+    A_FILE = 0,
+    B_FILE = 1,
+    C_FILE = 2,
+    D_FILE = 3,
+    E_FILE = 4,
+    F_FILE = 5,
+    G_FILE = 6,
+    H_FILE = 7,
+    INVALID_FILE = -1
+};
+
 struct ChessBoard {
 
     // Store the board as a series of "bit boards"
@@ -84,7 +96,8 @@ class Chess {
         void getLegalMovesForSquare(int x, int y, bool *moveSquares);
         void printBoard();
 
-        void makeMove(int x1, int y1, int x2, int y2);
+        /* returns whether the move was en passant or not */
+        bool makeMove(int x1, int y1, int x2, int y2);
 
     private:
 
@@ -96,5 +109,7 @@ class Chess {
         ChessBoard m_board;
 
         bool m_isWhitesTurn;
+
+        int m_can_en_passant_file;
 
 };
