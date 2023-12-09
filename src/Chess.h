@@ -49,7 +49,9 @@ enum PieceTypes {
     BLACK_ROOK      = 1 << 9,
     BLACK_KING      = 1 << 10,
     BLACK_QUEEN     = 1 << 11,
-    NO_PIECE        = 1 << 12
+    NO_PIECE        = 1 << 12,
+    WHITE_PIECES    = WHITE_PAWN | WHITE_KNIGHT | WHITE_BISHOP | WHITE_ROOK | WHITE_KING | WHITE_QUEEN,
+    BLACK_PIECES    = BLACK_PAWN | BLACK_KNIGHT | BLACK_BISHOP | BLACK_ROOK | BLACK_KING | BLACK_QUEEN
 }; 
 
 struct ChessBoard {
@@ -88,4 +90,7 @@ class Chess {
         std::string prettyPiece(enum PieceTypes piece);
 
         ChessBoard m_board;
+
+        bool m_isWhitesTurn;
+
 };

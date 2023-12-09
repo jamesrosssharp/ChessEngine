@@ -93,10 +93,17 @@ void UI::handleAKeyDown()
         
             // Check if move if legal
 
-            // Not legal - queue "Illegal move" to speech synth
+            if (!m_legal_moves[m_highlighted_y][m_highlighted_x])
+            { 
+                // Not legal - queue "Illegal move" to speech synth
+                printf("Illegal move!\n");
+            }
+            else 
+            {
+                // Legal - make move in renderer, and pass to engine to get response
+                m_renderer->movePiece(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
 
-            // Legal - make move in renderer, and pass to engine to get response
-
+            }    
         }
     }
     else

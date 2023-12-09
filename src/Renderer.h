@@ -50,6 +50,8 @@ enum RenderSpriteType {
 struct RenderSprite 
 {
     enum RenderSpriteType sprite_type;
+    int grid_x;
+    int grid_y;
     double x;
     double y;
     double vx;
@@ -74,6 +76,8 @@ class Renderer {
 
         void setLegalMoves(bool* legalMoves);
 
+        void movePiece(int x1, int y1, int x2, int y2);
+
     private:
 
         void renderSprite(struct RenderSprite* sp, bool white);
@@ -89,9 +93,10 @@ class Renderer {
         static constexpr int kRooks     = 12;
         static constexpr int kKing      = 14;
         static constexpr int kQueen     = 15;
+        static constexpr int kNChessmen = 16;
 
-        struct RenderSprite m_chessmen_white[16];
-        struct RenderSprite m_chessmen_black[16];
+        struct RenderSprite m_chessmen_white[kNChessmen];
+        struct RenderSprite m_chessmen_black[kNChessmen];
 
         int m_highlighted_square_x = 0;
         int m_highlighted_square_y = 0;

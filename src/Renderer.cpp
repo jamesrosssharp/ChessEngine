@@ -217,6 +217,8 @@ void Renderer::resetBoard()
         sp->x = -1 + i/4.0;
         sp->y = -0.75;
         sp->sprite_type = TYPE_PAWN;
+        sp->grid_x = i;
+        sp->grid_y = 1;
     }
 
     // White bishops
@@ -229,6 +231,8 @@ void Renderer::resetBoard()
         sp->x = (i == 0) ? -0.5 : 0.25;
         sp->y = -1.0;
         sp->sprite_type = TYPE_BISHOP;
+        sp->grid_x = (i == 0) ? 2 : 5;
+        sp->grid_y = 0;
     }
 
     // White knights
@@ -241,7 +245,9 @@ void Renderer::resetBoard()
         sp->x = (i == 0) ? -0.75 : 0.5;
         sp->y = -1.0;
         sp->sprite_type = TYPE_KNIGHT;
-    }
+        sp->grid_x = (i == 0) ? 1 : 6;
+        sp->grid_y = 0;
+   }
 
     // White rooks
 
@@ -253,6 +259,8 @@ void Renderer::resetBoard()
         sp->x = (i == 0) ? -1.0 : 0.75;
         sp->y = -1.0;
         sp->sprite_type = TYPE_ROOK;
+        sp->grid_x = (i == 0) ? 0 : 7;
+        sp->grid_y = 0;
     }
 
     // White King
@@ -264,6 +272,8 @@ void Renderer::resetBoard()
         sp->x = 0.0;
         sp->y = -1.0;
         sp->sprite_type = TYPE_KING;
+        sp->grid_x = 4;
+        sp->grid_y = 0;
     }
 
     // White queen
@@ -275,6 +285,8 @@ void Renderer::resetBoard()
         sp->x = -0.25;
         sp->y = -1.0;
         sp->sprite_type = TYPE_QUEEN;
+        sp->grid_x = 3;
+        sp->grid_y = 0;
     }
 
     // Set up black pawns
@@ -286,7 +298,9 @@ void Renderer::resetBoard()
         sp->x = -1 + i/4.0;
         sp->y = 0.5;
         sp->sprite_type = TYPE_PAWN;
-    }
+        sp->grid_x = i;
+        sp->grid_y = 6;
+   }
 
     // BLack bishops
 
@@ -298,6 +312,8 @@ void Renderer::resetBoard()
         sp->x = (i == 0) ? -0.5 : 0.25;
         sp->y = 0.75;
         sp->sprite_type = TYPE_BISHOP;
+        sp->grid_x = (i == 0) ? 2 : 5;
+        sp->grid_y = 7;
     }
 
     // Black knights
@@ -310,6 +326,9 @@ void Renderer::resetBoard()
         sp->x = (i == 0) ? -0.75 : 0.5;
         sp->y = 0.75;
         sp->sprite_type = TYPE_KNIGHT;
+        sp->grid_x = (i == 0) ? 1 : 6;
+        sp->grid_y = 7;
+
     }
 
     // Black rooks
@@ -322,6 +341,9 @@ void Renderer::resetBoard()
         sp->x = (i == 0) ? -1.0 : 0.75;
         sp->y = 0.75;
         sp->sprite_type = TYPE_ROOK;
+        sp->grid_x = (i == 0) ? 0 : 7;
+        sp->grid_y = 7;
+
     }
 
     // Black King
@@ -333,7 +355,9 @@ void Renderer::resetBoard()
         sp->x = 0.0;
         sp->y = 0.75;
         sp->sprite_type = TYPE_KING;
-    }
+        sp->grid_x = 4;
+        sp->grid_y = 0;
+   }
 
     // Black queen
 
@@ -344,6 +368,8 @@ void Renderer::resetBoard()
         sp->x = -0.25;
         sp->y = 0.75;
         sp->sprite_type = TYPE_QUEEN;
+        sp->grid_x = 3;
+        sp->grid_y = 0;
     }
 
 
@@ -417,6 +443,19 @@ void Renderer::renderSprite(struct RenderSprite* sp, bool white)
         glVertex2f(x1, y1);
 
     glEnd();
+
+    // Update sprite
+    sp->x += sp->vx;
+    sp->y += sp->vy;
+
+    if (sp->frames)
+        sp->frames--;
+    if (sp->frames == 0)
+    {
+        sp->vx = 0;
+        sp->vy = 0;
+    }
+
 }
 
 void Renderer::setHighlightedSquare(int x, int y)
@@ -440,3 +479,29 @@ void Renderer::setLegalMoves(bool* legalMoves)
 {
     memcpy(&m_legal_moves[0][0], legalMoves, sizeof(m_legal_moves));
 }
+
+void Renderer::movePiece(int x1, int y1, int x2, int y2)
+{
+    // Find out which piece is on the square
+
+    RenderSprite* piece = nullptr;
+
+    for (int i = 0; i < kNChessmen; i++)
+    {
+        piece = &m_chessmen_white[i];
+        if ((piece->grid_x == x1) && (piece->grid_y == y1)) break;
+        piece = &m_chessmen_black[i];
+        if ((piece->grid_x == x1) && (piece->grid_y == y1)) break;
+    }
+
+    if (piece != nullptr)
+    {
+        piece->grid_x = x2;
+        piece->grid_y = y2;
+        constexpr int frames = 100;
+        piece->vx = (x2 - x1)/4.0 / frames;
+        piece->vy = (y2 - y1)/4.0 / frames;
+        piece->frames = frames;
+    }
+}
+

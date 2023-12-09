@@ -33,6 +33,10 @@ SOFTWARE.
 #include "Chess.h"
 #include <cstdio>
 #include <iostream>
+#include <vector>
+
+const std::vector<std::pair<int, int>> knightMoves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
+
 
 Chess::Chess()
 {
@@ -58,6 +62,7 @@ void Chess::resetBoard()
     m_board.blackKingsBoard     = 0x1000'0000'0000'0000;
     m_board.blackQueensBoard    = 0x0800'0000'0000'0000; 
 
+    m_isWhitesTurn = true;
 }
 
 void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
@@ -95,8 +100,51 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                 moveSquares[x + (y + i)*8] = true;   
             }
 
-            break;
+            // Simple capturing
+        
+            // En passant
 
+            break;
+        case BLACK_PAWN:
+
+            // Black pawn can move in decreasing y 1 or two squares.
+            // TODO: En passant, capturing
+
+            // Simple moves
+            for (int i = 1; i <= 2; i++)
+            {
+
+                // Check if blocked by a piece
+
+                if (getPieceForSquare(x, y - i) != NO_PIECE) continue;
+
+                // If not, we can move here.
+
+                moveSquares[x + (y - i)*8] = true;   
+            }
+            break;
+        case WHITE_KNIGHT:
+        case BLACK_KNIGHT:
+
+            for (auto p : knightMoves)
+            {
+
+               int xx = x + p.first;
+               int yy = y + p.second;
+
+               if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+               {
+                    if ((piece == WHITE_KNIGHT) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
+                    if ((piece == BLACK_KNIGHT) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
+
+                    moveSquares[xx + yy*8] = true;
+               }
+
+            }
+
+            break;
+        default:
+           break; 
     }
 
 }
