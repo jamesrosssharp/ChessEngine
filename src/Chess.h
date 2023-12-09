@@ -84,10 +84,14 @@ class Chess {
         void getLegalMovesForSquare(int x, int y, bool *moveSquares);
         void printBoard();
 
+        void makeMove(int x1, int y1, int x2, int y2);
+
     private:
 
         enum PieceTypes getPieceForSquare(int x, int y);
         std::string prettyPiece(enum PieceTypes piece);
+        void removePieceFromSquare(enum PieceTypes type, int x, int y);
+        void addPieceToSquare(enum PieceTypes type, int x, int y);
 
         ChessBoard m_board;
 

@@ -253,3 +253,120 @@ std::string Chess::prettyPiece(enum PieceTypes piece)
     }
     return "None";
 }
+
+void Chess::removePieceFromSquare(enum PieceTypes type, int x, int y)
+{
+    uint64_t sq   = 1ULL << (x + y*8);
+
+    switch (type)
+    {
+        case WHITE_PAWN:
+            m_board.whitePawnsBoard &= ~sq;
+            break;
+        case BLACK_PAWN:
+            m_board.blackPawnsBoard &= ~sq;            
+            break;
+        case WHITE_KNIGHT:
+            m_board.whiteKnightsBoard &= ~sq;
+            break;
+        case BLACK_KNIGHT:
+            m_board.blackKnightsBoard &= ~sq;
+            break;
+        case WHITE_BISHOP:
+            m_board.whiteBishopsBoard &= ~sq;
+            break;
+        case BLACK_BISHOP:
+            m_board.blackBishopsBoard &= ~sq;
+            break;
+        case WHITE_ROOK:
+            m_board.whiteRooksBoard &= ~sq;
+            break;
+        case BLACK_ROOK:
+            m_board.blackRooksBoard &= ~sq;
+            break;
+        case WHITE_KING:
+            m_board.whiteKingsBoard &= ~sq;
+            break;
+        case BLACK_KING:
+            m_board.blackKingsBoard &= ~sq;
+            break;
+        case WHITE_QUEEN:
+            m_board.whiteQueensBoard &= ~sq;
+            break;
+        case BLACK_QUEEN:
+            m_board.blackQueensBoard &= ~sq;
+            break;
+        default: ; 
+    }
+
+}
+        
+void Chess::addPieceToSquare(enum PieceTypes type, int x, int y)
+{
+
+    uint64_t sq   = 1ULL << (x + y*8);
+
+    switch (type)
+    {
+        case WHITE_PAWN:
+            m_board.whitePawnsBoard |= sq;
+            break;
+        case BLACK_PAWN:
+            m_board.blackPawnsBoard |= sq;            
+            break;
+        case WHITE_KNIGHT:
+            m_board.whiteKnightsBoard |= sq;
+            break;
+        case BLACK_KNIGHT:
+            m_board.blackKnightsBoard |= sq;
+            break;
+        case WHITE_BISHOP:
+            m_board.whiteBishopsBoard |= sq;
+            break;
+        case BLACK_BISHOP:
+            m_board.blackBishopsBoard |= sq;
+            break;
+        case WHITE_ROOK:
+            m_board.whiteRooksBoard |= sq;
+            break;
+        case BLACK_ROOK:
+            m_board.blackRooksBoard |= sq;
+            break;
+        case WHITE_KING:
+            m_board.whiteKingsBoard |= sq;
+            break;
+        case BLACK_KING:
+            m_board.blackKingsBoard |= sq;
+            break;
+        case WHITE_QUEEN:
+            m_board.whiteQueensBoard |= sq;
+            break;
+        case BLACK_QUEEN:
+            m_board.blackQueensBoard |= sq;
+            break;
+        default: ; 
+    }
+
+
+}
+
+void Chess::makeMove(int x1, int y1, int x2, int y2)
+{
+
+    enum PieceTypes start_piece = getPieceForSquare(x1, y1);
+    enum PieceTypes end_piece   = getPieceForSquare(x1, y1);
+
+    uint64_t start_sq = 1ULL << (x1 + y1*8);
+
+    if (end_piece != NO_PIECE)
+    {
+        // Capture... remove piece from board
+        removePieceFromSquare(end_piece, x2, y2);
+    }
+
+    removePieceFromSquare(start_piece, x1, y1);
+    addPieceToSquare(start_piece, x2, y2);
+
+    printBoard();
+}
+

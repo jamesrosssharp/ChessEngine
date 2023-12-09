@@ -82,10 +82,7 @@ void UI::handleAKeyDown()
         if ((m_selected_square_x == m_highlighted_x) && (m_selected_square_y == m_highlighted_y))
         {
             m_square_selected = false;
-            for (int i = 0; i < 8; i++)
-                for (int j = 0; j < 8; j++)
-                    m_legal_moves[i][j] = false;
-
+            clearLegalMoves();
         }
         else
         {
@@ -102,7 +99,9 @@ void UI::handleAKeyDown()
             {
                 // Legal - make move in renderer, and pass to engine to get response
                 m_renderer->movePiece(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
-
+                m_ch->makeMove(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y);
+                clearLegalMoves();
+                m_square_selected = false;
             }    
         }
     }
@@ -122,4 +121,11 @@ void UI::handleAKeyDown()
 void UI::handleBKeyDown()
 {
 
+}
+
+void UI::clearLegalMoves()
+{
+    for (int i = 0; i < 8; i++)
+        for (int j = 0; j < 8; j++)
+            m_legal_moves[i][j] = false;
 }

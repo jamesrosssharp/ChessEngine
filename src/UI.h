@@ -50,6 +50,8 @@ class UI
 
     private:
 
+        void clearLegalMoves();
+
         int     m_highlighted_x;
         int     m_highlighted_y;
 

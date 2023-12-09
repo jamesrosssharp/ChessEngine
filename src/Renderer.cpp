@@ -489,9 +489,26 @@ void Renderer::movePiece(int x1, int y1, int x2, int y2)
     for (int i = 0; i < kNChessmen; i++)
     {
         piece = &m_chessmen_white[i];
-        if ((piece->grid_x == x1) && (piece->grid_y == y1)) break;
+        if ((piece->grid_x == x1) && (piece->grid_y == y1) && piece->visible) break;
         piece = &m_chessmen_black[i];
-        if ((piece->grid_x == x1) && (piece->grid_y == y1)) break;
+        if ((piece->grid_x == x1) && (piece->grid_y == y1) && piece->visible) break;
+        piece = nullptr;
+    }
+
+    RenderSprite* end_piece = nullptr;
+
+    for (int i = 0; i < kNChessmen; i++)
+    {
+        end_piece = &m_chessmen_white[i];
+        if ((end_piece->grid_x == x2) && (end_piece->grid_y == y2) && end_piece->visible) break;
+        end_piece = &m_chessmen_black[i];
+        if ((end_piece->grid_x == x2) && (end_piece->grid_y == y2) && end_piece->visible) break;
+        end_piece = nullptr;
+    }
+
+    if (end_piece != nullptr)
+    {
+        end_piece->visible = false;
     }
 
     if (piece != nullptr)
