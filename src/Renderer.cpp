@@ -356,7 +356,7 @@ void Renderer::resetBoard()
         sp->y = 0.75;
         sp->sprite_type = TYPE_KING;
         sp->grid_x = 4;
-        sp->grid_y = 0;
+        sp->grid_y = 7;
    }
 
     // Black queen
@@ -369,7 +369,7 @@ void Renderer::resetBoard()
         sp->y = 0.75;
         sp->sprite_type = TYPE_QUEEN;
         sp->grid_x = 3;
-        sp->grid_y = 0;
+        sp->grid_y = 7;
     }
 
 

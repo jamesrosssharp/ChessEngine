@@ -37,6 +37,10 @@ SOFTWARE.
 
 const std::vector<std::pair<int, int>> knightMoves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 const std::vector<std::pair<int, int>> pawnCaptures = {{-1, 1}, {1, 1}};
+const std::vector<std::pair<int, int>> queenMoves = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+const std::vector<std::pair<int, int>> kingMoves = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+const std::vector<std::pair<int, int>> bishopMoves = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
+const std::vector<std::pair<int, int>> rookMoves = {{1, 0}, {0, 1},  {-1, 0}, {0, -1}};
 
 Chess::Chess()
 {
@@ -80,6 +84,8 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
 
     std::cout << "Computing moves for " << prettyPiece(piece) << std::endl;
 
+    // TODO: Check for check! - cannot allow move if it results in check (or doesn't prevent an existing check)
+
     // Compute legal moves for this piece
 
     switch(piece)
@@ -122,6 +128,11 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                 if ((piece == WHITE_PAWN) && !(getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
                 if ((piece == BLACK_PAWN) && !(getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
 
+                // Can never take the king
+                if ((piece == WHITE_PAWN) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
+                if ((piece == BLACK_PAWN) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
+
+
                 moveSquares[xx + yy*8] = true;
             }
 
@@ -157,12 +168,133 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     if ((piece == WHITE_KNIGHT) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
                     if ((piece == BLACK_KNIGHT) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
 
+                    // Can never take the king
+                    if ((piece == WHITE_KNIGHT) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
+                    if ((piece == BLACK_KNIGHT) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
+
                     moveSquares[xx + yy*8] = true;
                }
 
             }
 
             break;
+        case WHITE_BISHOP:
+        case BLACK_BISHOP:
+
+            for (auto p : bishopMoves)
+            {
+                for (int k = 1; k < 8; k++)
+                {
+                   int xx = x + p.first * k;
+                   int yy = y + p.second * k;
+
+                   if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+                   {
+                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+
+                        // Can never take the king
+                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
+                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
+
+                        moveSquares[xx + yy*8] = true;
+                  
+                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+
+
+                   }
+
+               }
+            }
+
+            break;
+        case WHITE_ROOK:
+        case BLACK_ROOK:
+
+            for (auto p : rookMoves)
+            {
+                for (int k = 1; k < 8; k++)
+                {
+                   int xx = x + p.first * k;
+                   int yy = y + p.second * k;
+
+                   if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+                   {
+                        if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+
+                        // Can never take the king
+                        if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
+                        if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
+
+                        moveSquares[xx + yy*8] = true;
+                  
+                        if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+
+                   }
+
+               }
+            }
+
+            break;
+        case WHITE_QUEEN:
+        case BLACK_QUEEN:
+
+            for (auto p : queenMoves)
+            {
+                for (int k = 1; k < 8; k++)
+                {
+                   int xx = x + p.first * k;
+                   int yy = y + p.second * k;
+
+                   if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+                   {
+                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+
+                        // Can never take the king
+                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
+                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
+
+                        moveSquares[xx + yy*8] = true;
+                  
+                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+
+                   }
+
+               }
+            }
+
+            break;
+        case WHITE_KING:
+        case BLACK_KING:
+
+            for (auto p : kingMoves)
+            {
+               int xx = x + p.first;
+               int yy = y + p.second;
+
+               if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+               {
+                    if ((piece == WHITE_KING) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
+                    if ((piece == BLACK_KING) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
+
+                    // Can never take the king
+                    if ((piece == WHITE_KING) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
+                    if ((piece == BLACK_KING) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
+
+                    moveSquares[xx + yy*8] = true;
+              
+               }
+
+            }
+
+            break;
+     
+     
         default:
            break; 
     }
@@ -376,9 +508,7 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
     bool ep = false;
 
     enum PieceTypes start_piece = getPieceForSquare(x1, y1);
-    enum PieceTypes end_piece   = getPieceForSquare(x1, y1);
-
-    uint64_t start_sq = 1ULL << (x1 + y1*8);
+    enum PieceTypes end_piece   = getPieceForSquare(x2, y2);
 
     if (end_piece != NO_PIECE)
     {
