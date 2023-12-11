@@ -32,7 +32,7 @@ SOFTWARE.
 
 #include "Chess.h"
 #include <cstdio>
-#include <iostream>
+//#include <iostream>
 #include <vector>
 
 const std::vector<std::pair<int, int>> knightMoves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
@@ -66,20 +66,23 @@ void Chess::resetBoard()
     m_board.blackKingsBoard     = 0x1000'0000'0000'0000;
     m_board.blackQueensBoard    = 0x0800'0000'0000'0000; 
 
-    m_isWhitesTurn = true;
+    m_board.m_isWhitesTurn = true;
 
-    m_can_en_passant_file = INVALID_FILE;
-    m_whiteKingHasMoved = false;
-    m_blackKingHasMoved = false;
-    m_whiteARookHasMoved = false;
-    m_whiteHRookHasMoved = false;
-    m_blackARookHasMoved = false;
-    m_blackHRookHasMoved = false;
-
-
+    m_board.m_can_en_passant_file = INVALID_FILE;
+    m_board.m_whiteKingHasMoved = false;
+    m_board.m_blackKingHasMoved = false;
+    m_board.m_whiteARookHasMoved = false;
+    m_board.m_whiteHRookHasMoved = false;
+    m_board.m_blackARookHasMoved = false;
+    m_board.m_blackHRookHasMoved = false;
 }
 
 void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool allowTakeKing)
+{
+    getLegalMovesForBoardSquare(m_board, x, y, moveSquares, allowTakeKing);
+}
+
+void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t &moveSquares, bool allowTakeKing)
 {
     // Init: zero out legal moves
 
@@ -87,14 +90,14 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
     // First, find the piece which is on this square
 
-    enum PieceTypes piece = getPieceForSquare(x, y);
+    enum PieceTypes piece = getPieceForSquare(board, x, y);
 
     //std::cout << "Computing moves for " << prettyPiece(piece) << std::endl;
 
     // Check if it's this colors move
 
-    if (m_isWhitesTurn && !(piece & WHITE_PIECES)) return;
-    if (!m_isWhitesTurn && !(piece & BLACK_PIECES)) return;
+    if (board.m_isWhitesTurn && !(piece & WHITE_PIECES)) return;
+    if (!board.m_isWhitesTurn && !(piece & BLACK_PIECES)) return;
 
     // TODO: Check for check! - cannot allow move if it results in check (or doesn't prevent an existing check)
 
@@ -116,7 +119,7 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                 // Check if blocked by a piece
 
-                if (getPieceForSquare(x, y + i*multiplier) != NO_PIECE) break;
+                if (getPieceForSquare(board, x, y + i*multiplier) != NO_PIECE) break;
 
                 // We can only move 2 squares on first move.
 
@@ -137,14 +140,14 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                 if (xx < 0) continue;
                 if (xx > 7) continue;
-                if ((piece == WHITE_PAWN) && !(getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
-                if ((piece == BLACK_PAWN) && !(getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
+                if ((piece == WHITE_PAWN) && !(getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
+                if ((piece == BLACK_PAWN) && !(getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
 
                 if (!allowTakeKing)
                 {
                     // Can never take the king
-                    if ((piece == WHITE_PAWN) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
-                    if ((piece == BLACK_PAWN) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
+                    if ((piece == WHITE_PAWN) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
+                    if ((piece == BLACK_PAWN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
                 }
 
                 moveSquares |= 1ULL << (xx + yy*8);
@@ -160,8 +163,8 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
                 if (xx < 0) continue;
                 if (xx > 7) continue;
             
-                if (! ( ((piece == WHITE_PAWN) && (m_can_en_passant_file == xx) && (getPieceForSquare(xx, yy - multiplier) & BLACK_PIECES)) ||
-                        ((piece == BLACK_PAWN) && (m_can_en_passant_file == xx) && (getPieceForSquare(xx, yy - multiplier) & WHITE_PIECES)) )) continue;
+                if (! ( ((piece == WHITE_PAWN) && (board.m_can_en_passant_file == xx) && (getPieceForSquare(board, xx, yy - multiplier) & BLACK_PIECES)) ||
+                        ((piece == BLACK_PAWN) && (board.m_can_en_passant_file == xx) && (getPieceForSquare(board, xx, yy - multiplier) & WHITE_PIECES)) )) continue;
 
                 moveSquares |= 1ULL << (xx + yy*8);
             }
@@ -179,14 +182,14 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
                {
-                    if ((piece == WHITE_KNIGHT) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
-                    if ((piece == BLACK_KNIGHT) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
+                    if ((piece == WHITE_KNIGHT) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
+                    if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
 
                     // Can never take the king
                     if (!allowTakeKing)
                     {
-                        if ((piece == WHITE_KNIGHT) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
-                        if ((piece == BLACK_KNIGHT) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
+                        if ((piece == WHITE_KNIGHT) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
+                        if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
                     }
 
                     moveSquares |= 1ULL << (xx + yy*8);
@@ -207,19 +210,19 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                    if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
                    {
-                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
-                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
 
                         if (!allowTakeKing)
                         {
-                            if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
-                            if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
+                            if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
+                            if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
                         }
 
                         moveSquares |= 1ULL << (xx + yy*8);
                   
-                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
-                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
 
 
                    }
@@ -240,19 +243,19 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                    if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
                    {
-                        if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
-                        if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
 
                         if (!allowTakeKing)
                         {
-                            if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
-                            if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
+                            if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
+                            if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
                         }
 
                         moveSquares |= 1ULL << (xx + yy*8);
                   
-                        if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
-                        if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
 
                    }
 
@@ -272,19 +275,19 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                    if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
                    {
-                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
-                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
 
                         if (!allowTakeKing)
                         {
-                            if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
-                            if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
+                            if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
+                            if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
                         }
 
                         moveSquares |= 1ULL << (xx + yy*8);
                   
-                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
-                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
+                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
+                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
 
                    }
 
@@ -302,13 +305,13 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
                if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
                {
-                    if ((piece == WHITE_KING) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) continue;
-                    if ((piece == BLACK_KING) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) continue;
+                    if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
+                    if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
 
                     if (!allowTakeKing)
                     {
-                        if ((piece == WHITE_KING) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
-                        if ((piece == BLACK_KING) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
+                        if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
+                        if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
                     }
 
                     moveSquares |= 1ULL << (xx + yy*8);
@@ -319,46 +322,46 @@ void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool all
 
             // Check for castling moves
 
-            if ((piece == WHITE_KING) && (!m_whiteKingHasMoved))
+            if ((piece == WHITE_KING) && (!board.m_whiteKingHasMoved))
             {
 
                 // Check King side castling
-                if ((getPieceForSquare(5,0) == NO_PIECE) &&
-                    (getPieceForSquare(6,0) == NO_PIECE) &&
-                    !m_whiteHRookHasMoved)
+                if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
+                    (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
+                    !board.m_whiteHRookHasMoved)
                 {
-                    moveSquares |= 1ULL << 6;
+                    moveSquares |= 1ULL << (G_FILE);
                 }
 
                 // Check Queen side castling
-                if ((getPieceForSquare(3,0) == NO_PIECE) &&
-                    (getPieceForSquare(2,0) == NO_PIECE) &&
-                    (getPieceForSquare(1,0) == NO_PIECE) &&
-                    !m_whiteARookHasMoved)
+                if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
+                    (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
+                    (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
+                    !board.m_whiteARookHasMoved)
                 {
-                    moveSquares |= 1ULL << 2;
+                    moveSquares |= 1ULL << (C_FILE);
                 }
 
             }
 
-            if ((piece == BLACK_KING) && (!m_blackKingHasMoved))
+            if ((piece == BLACK_KING) && (!board.m_blackKingHasMoved))
             {
 
                 // Check King side castling
-                if ((getPieceForSquare(5,7) == NO_PIECE) &&
-                    (getPieceForSquare(6,7) == NO_PIECE) &&
-                    !m_blackHRookHasMoved)
+                if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
+                    (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
+                    !board.m_blackHRookHasMoved)
                 {
-                    moveSquares |= 1ULL << (6 + 7*8);
+                    moveSquares |= 1ULL << (G_FILE + EIGHTH_RANK*8);
                 }
 
                 // Check Queen side castling
-                if ((getPieceForSquare(3,7) == NO_PIECE) &&
-                    (getPieceForSquare(2,7) == NO_PIECE) &&
-                    (getPieceForSquare(1,7) == NO_PIECE) &&
-                    !m_blackARookHasMoved)
+                if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
+                    (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
+                    (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
+                    !board.m_blackARookHasMoved)
                 {
-                    moveSquares |= 1ULL << (2 + 7*8);
+                    moveSquares |= 1ULL << (C_FILE + EIGHTH_RANK*8);
                 }
 
             }
@@ -409,33 +412,33 @@ void Chess::printBoard()
 
 }
 
-enum PieceTypes Chess::getPieceForSquare(int x, int y)
+enum PieceTypes Chess::getPieceForSquare(const ChessBoard& board, int x, int y)
 {
     uint64_t sq = 1ULL << (y*8 + x);
 
-    if (m_board.whitePawnsBoard & sq)
+    if (board.whitePawnsBoard & sq)
         return WHITE_PAWN; 
-    else if (m_board.whiteKnightsBoard & sq)
+    else if (board.whiteKnightsBoard & sq)
         return WHITE_KNIGHT;
-    else if (m_board.whiteBishopsBoard & sq)
+    else if (board.whiteBishopsBoard & sq)
         return WHITE_BISHOP;
-    else if (m_board.whiteRooksBoard & sq)
+    else if (board.whiteRooksBoard & sq)
         return WHITE_ROOK;
-    else if (m_board.whiteKingsBoard & sq)
+    else if (board.whiteKingsBoard & sq)
         return WHITE_KING;
-    else if (m_board.whiteQueensBoard & sq)
+    else if (board.whiteQueensBoard & sq)
         return WHITE_QUEEN;
-    else if (m_board.blackPawnsBoard & sq)
+    else if (board.blackPawnsBoard & sq)
         return BLACK_PAWN;
-    else if (m_board.blackKnightsBoard & sq)
+    else if (board.blackKnightsBoard & sq)
         return BLACK_KNIGHT;
-    else if (m_board.blackBishopsBoard & sq)
+    else if (board.blackBishopsBoard & sq)
         return BLACK_BISHOP;
-    else if (m_board.blackRooksBoard & sq)
+    else if (board.blackRooksBoard & sq)
         return BLACK_ROOK;
-    else if (m_board.blackKingsBoard & sq)
+    else if (board.blackKingsBoard & sq)
         return BLACK_KING;
-    else if (m_board.blackQueensBoard & sq)
+    else if (board.blackQueensBoard & sq)
         return BLACK_QUEEN;
     return NO_PIECE;
 }
@@ -474,54 +477,54 @@ std::string Chess::prettyPiece(enum PieceTypes piece)
     return "None";
 }
 
-void Chess::removePieceFromSquare(enum PieceTypes type, int x, int y)
+void Chess::removePieceFromSquare(ChessBoard& board, enum PieceTypes type, int x, int y)
 {
     uint64_t sq   = 1ULL << (x + y*8);
 
     switch (type)
     {
         case WHITE_PAWN:
-            m_board.whitePawnsBoard &= ~sq;
+            board.whitePawnsBoard &= ~sq;
             break;
         case BLACK_PAWN:
-            m_board.blackPawnsBoard &= ~sq;            
+            board.blackPawnsBoard &= ~sq;            
             break;
         case WHITE_KNIGHT:
-            m_board.whiteKnightsBoard &= ~sq;
+            board.whiteKnightsBoard &= ~sq;
             break;
         case BLACK_KNIGHT:
-            m_board.blackKnightsBoard &= ~sq;
+            board.blackKnightsBoard &= ~sq;
             break;
         case WHITE_BISHOP:
-            m_board.whiteBishopsBoard &= ~sq;
+            board.whiteBishopsBoard &= ~sq;
             break;
         case BLACK_BISHOP:
-            m_board.blackBishopsBoard &= ~sq;
+            board.blackBishopsBoard &= ~sq;
             break;
         case WHITE_ROOK:
-            m_board.whiteRooksBoard &= ~sq;
+            board.whiteRooksBoard &= ~sq;
             break;
         case BLACK_ROOK:
-            m_board.blackRooksBoard &= ~sq;
+            board.blackRooksBoard &= ~sq;
             break;
         case WHITE_KING:
-            m_board.whiteKingsBoard &= ~sq;
+            board.whiteKingsBoard &= ~sq;
             break;
         case BLACK_KING:
-            m_board.blackKingsBoard &= ~sq;
+            board.blackKingsBoard &= ~sq;
             break;
         case WHITE_QUEEN:
-            m_board.whiteQueensBoard &= ~sq;
+            board.whiteQueensBoard &= ~sq;
             break;
         case BLACK_QUEEN:
-            m_board.blackQueensBoard &= ~sq;
+            board.blackQueensBoard &= ~sq;
             break;
         default: ; 
     }
 
 }
         
-void Chess::addPieceToSquare(enum PieceTypes type, int x, int y)
+void Chess::addPieceToSquare(ChessBoard& board, enum PieceTypes type, int x, int y)
 {
 
     uint64_t sq   = 1ULL << (x + y*8);
@@ -529,72 +532,76 @@ void Chess::addPieceToSquare(enum PieceTypes type, int x, int y)
     switch (type)
     {
         case WHITE_PAWN:
-            m_board.whitePawnsBoard |= sq;
+            board.whitePawnsBoard |= sq;
             break;
         case BLACK_PAWN:
-            m_board.blackPawnsBoard |= sq;            
+            board.blackPawnsBoard |= sq;            
             break;
         case WHITE_KNIGHT:
-            m_board.whiteKnightsBoard |= sq;
+            board.whiteKnightsBoard |= sq;
             break;
         case BLACK_KNIGHT:
-            m_board.blackKnightsBoard |= sq;
+            board.blackKnightsBoard |= sq;
             break;
         case WHITE_BISHOP:
-            m_board.whiteBishopsBoard |= sq;
+            board.whiteBishopsBoard |= sq;
             break;
         case BLACK_BISHOP:
-            m_board.blackBishopsBoard |= sq;
+            board.blackBishopsBoard |= sq;
             break;
         case WHITE_ROOK:
-            m_board.whiteRooksBoard |= sq;
+            board.whiteRooksBoard |= sq;
             break;
         case BLACK_ROOK:
-            m_board.blackRooksBoard |= sq;
+            board.blackRooksBoard |= sq;
             break;
         case WHITE_KING:
-            m_board.whiteKingsBoard |= sq;
+            board.whiteKingsBoard |= sq;
             break;
         case BLACK_KING:
-            m_board.blackKingsBoard |= sq;
+            board.blackKingsBoard |= sq;
             break;
         case WHITE_QUEEN:
-            m_board.whiteQueensBoard |= sq;
+            board.whiteQueensBoard |= sq;
             break;
         case BLACK_QUEEN:
-            m_board.blackQueensBoard |= sq;
+            board.blackQueensBoard |= sq;
             break;
         default: ; 
     }
-
-
 }
 
 void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side)
+{
+    makeMoveForBoard(m_board, x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side);
+}
+
+
+void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side)
 {
 
     ep = false;
     castle_kings_side = false;
     castle_queens_side = false;
 
-    enum PieceTypes start_piece = getPieceForSquare(x1, y1);
-    enum PieceTypes end_piece   = getPieceForSquare(x2, y2);
+    enum PieceTypes start_piece = getPieceForSquare(board, x1, y1);
+    enum PieceTypes end_piece   = getPieceForSquare(board, x2, y2);
 
     if (end_piece != NO_PIECE)
     {
         // Capture... remove piece from board
-        removePieceFromSquare(end_piece, x2, y2);
+        removePieceFromSquare(board, end_piece, x2, y2);
     }
 
     // If this is an en passant pawn capture, need to remove captured en passant pawn
     int yy = (start_piece == WHITE_PAWN) ? y2 - 1 : y2 + 1;
 
     if (
-        ((start_piece == WHITE_PAWN) && (x2 != x1) && (m_can_en_passant_file == x2) && (getPieceForSquare(x2, yy) == BLACK_PAWN)) ||
-        ((start_piece == BLACK_PAWN) && (x2 != x1) && (m_can_en_passant_file == x2) && (getPieceForSquare(x2, yy) == WHITE_PAWN)))
+        ((start_piece == WHITE_PAWN) && (x2 != x1) && (board.m_can_en_passant_file == x2) && (getPieceForSquare(board, x2, yy) == BLACK_PAWN)) ||
+        ((start_piece == BLACK_PAWN) && (x2 != x1) && (board.m_can_en_passant_file == x2) && (getPieceForSquare(board, x2, yy) == WHITE_PAWN)))
     {
-        end_piece = getPieceForSquare(x2, yy);
-        removePieceFromSquare(end_piece, x2, yy); 
+        end_piece = getPieceForSquare(board, x2, yy);
+        removePieceFromSquare(board, end_piece, x2, yy); 
         ep = true;
     }
 
@@ -602,27 +609,27 @@ void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_king
     if (((start_piece == WHITE_PAWN) && (y1 == 1) && (y2 == 3)) ||
         ((start_piece == BLACK_PAWN) && (y1 == 6) && (y2 == 4)))
     {
-        m_can_en_passant_file = x1;
+        board.m_can_en_passant_file = x1;
     }
     else
-        m_can_en_passant_file = INVALID_FILE;
+        board.m_can_en_passant_file = INVALID_FILE;
 
     // If this piece is a king, flag that the king has moved
     if (start_piece == WHITE_KING)
-        m_whiteKingHasMoved = true;
+        board.m_whiteKingHasMoved = true;
     else if (start_piece == BLACK_KING)
-        m_blackKingHasMoved = true;
+        board.m_blackKingHasMoved = true;
 
     // Check if rooks have moved (disable castle)
     if (start_piece == WHITE_ROOK)
     {
-        if (x1 == 0) m_whiteARookHasMoved = true;
-        else if (x1 == 7) m_whiteHRookHasMoved = true;
+        if (x1 == 0) board.m_whiteARookHasMoved = true;
+        else if (x1 == 7) board.m_whiteHRookHasMoved = true;
     }
     else if (start_piece == BLACK_ROOK)
     {
-        if (x1 == 0) m_blackARookHasMoved = true;
-        else if (x1 == 7) m_blackHRookHasMoved = true;
+        if (x1 == 0) board.m_blackARookHasMoved = true;
+        else if (x1 == 7) board.m_blackHRookHasMoved = true;
     } 
 
     // Check for castling
@@ -630,20 +637,20 @@ void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_king
     if ((start_piece == WHITE_KING) && (abs(x2 - x1) > 1))
     {
 
-        if (x2 == 6)
+        if (x2 == G_FILE)
         {
             // Castle King side
-            removePieceFromSquare(WHITE_ROOK, 7, 0);
-            addPieceToSquare(WHITE_ROOK, 5, 0);
-            m_whiteHRookHasMoved = true;
+            removePieceFromSquare(board, WHITE_ROOK, H_FILE, FIRST_RANK);
+            addPieceToSquare(board, WHITE_ROOK, F_FILE, FIRST_RANK);
+            board.m_whiteHRookHasMoved = true;
             castle_kings_side = true;
         }
-        else if (x2 == 2)
+        else if (x2 == C_FILE)
         {
             // Castle Queen side
-            removePieceFromSquare(WHITE_ROOK, 0, 0);
-            addPieceToSquare(WHITE_ROOK, 3, 0);
-            m_whiteARookHasMoved = true;
+            removePieceFromSquare(board, WHITE_ROOK, A_FILE, FIRST_RANK);
+            addPieceToSquare(board, WHITE_ROOK, D_FILE, FIRST_RANK);
+            board.m_whiteARookHasMoved = true;
             castle_queens_side = true;
         }
 
@@ -651,55 +658,52 @@ void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_king
     else if ((start_piece == BLACK_KING) && (abs(x2 - x1) > 1))
     {
 
-        if (x2 == 6)
+        if (x2 == G_FILE)
         {
             // Castle King side
-            removePieceFromSquare(BLACK_ROOK, 7, 7);
-            addPieceToSquare(BLACK_ROOK, 5, 7);
-            m_blackHRookHasMoved = true;
+            removePieceFromSquare(board, BLACK_ROOK, H_FILE, EIGHTH_RANK);
+            addPieceToSquare(board, BLACK_ROOK, F_FILE, EIGHTH_RANK);
+            board.m_blackHRookHasMoved = true;
             castle_kings_side = true;
         }
-        else if (x2 == 2)
+        else if (x2 == C_FILE)
         {
             // Castle Queen side
-            removePieceFromSquare(BLACK_ROOK, 0, 7);
-            addPieceToSquare(BLACK_ROOK, 3, 7);
-            m_blackARookHasMoved = true;
+            removePieceFromSquare(board, BLACK_ROOK, A_FILE, EIGHTH_RANK);
+            addPieceToSquare(board, BLACK_ROOK, D_FILE, EIGHTH_RANK);
+            board.m_blackARookHasMoved = true;
             castle_queens_side = true;
         }
 
     }
 
-    removePieceFromSquare(start_piece, x1, y1);
-    addPieceToSquare(start_piece, x2, y2);
+    removePieceFromSquare(board, start_piece, x1, y1);
+    addPieceToSquare(board, start_piece, x2, y2);
 
     printBoard();
 
-    if (kingIsInCheck(m_board, !m_isWhitesTurn)) printf("Check!\n");
-    m_isWhitesTurn = !m_isWhitesTurn;
+    if (kingIsInCheck(m_board, !board.m_isWhitesTurn)) printf("Check!\n");
+    board.m_isWhitesTurn = !board.m_isWhitesTurn;
 
 }
 
 bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 {
-    uint64_t legalMoves = 0;
     for (int x = 0; x < 8; x++)
     {
         for (int y = 0; y < 8; y++)
         {
             uint64_t temp = 0;
-            enum PieceTypes type = getPieceForSquare(x, y);
+            enum PieceTypes type = getPieceForSquare(board, x, y);
             if ((!white && (type & WHITE_PIECES)) ||
                 (white && (type & BLACK_PIECES)))
             {
                     getLegalMovesForSquare(x, y, temp, true);
-                    legalMoves |= temp;
+                    if (white && (board.whiteKingsBoard & temp)) return true;
+                    if (!white && (board.blackKingsBoard & temp)) return true;
             }
         }
     }
 
-    if (white && (board.whiteKingsBoard & legalMoves)) return true;
-    if (!white && (board.blackKingsBoard & legalMoves)) return true;
-
-    return false;
+        return false;
 }

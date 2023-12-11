@@ -33,8 +33,6 @@ SOFTWARE.
 
 #include "chess_piece_texture.h"
 
-#include <string.h>
-
 Renderer::Renderer()
 {
     glEnable(GL_TEXTURE_2D);
@@ -51,10 +49,17 @@ Renderer::Renderer()
     for (int i = 0; i < 16; i++)
     {
         m_chessmen_white[i].visible = false;
+        m_chessmen_white[i].vx = 0;
+        m_chessmen_white[i].vy = 0;
+        m_chessmen_white[i].frames = 0;
         m_chessmen_black[i].visible = false;
+        m_chessmen_black[i].vx = 0;
+        m_chessmen_black[i].vy = 0;
+        m_chessmen_black[i].frames = 0;
     }
 
     m_legal_moves = 0;
+    m_animating = false;
 }
 
 Renderer::~Renderer()
@@ -217,6 +222,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_PAWN;
         sp->grid_x = i;
         sp->grid_y = 1;
+        sp->frames = 0;
     }
 
     // White bishops
@@ -231,6 +237,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_BISHOP;
         sp->grid_x = (i == 0) ? 2 : 5;
         sp->grid_y = 0;
+        sp->frames = 0;
     }
 
     // White knights
@@ -245,6 +252,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_KNIGHT;
         sp->grid_x = (i == 0) ? 1 : 6;
         sp->grid_y = 0;
+        sp->frames = 0;
    }
 
     // White rooks
@@ -259,6 +267,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_ROOK;
         sp->grid_x = (i == 0) ? 0 : 7;
         sp->grid_y = 0;
+        sp->frames = 0;
     }
 
     // White King
@@ -272,6 +281,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_KING;
         sp->grid_x = 4;
         sp->grid_y = 0;
+        sp->frames = 0;
     }
 
     // White queen
@@ -285,6 +295,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_QUEEN;
         sp->grid_x = 3;
         sp->grid_y = 0;
+        sp->frames = 0;
     }
 
     // Set up black pawns
@@ -298,6 +309,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_PAWN;
         sp->grid_x = i;
         sp->grid_y = 6;
+        sp->frames = 0;
    }
 
     // BLack bishops
@@ -312,6 +324,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_BISHOP;
         sp->grid_x = (i == 0) ? 2 : 5;
         sp->grid_y = 7;
+        sp->frames = 0;
     }
 
     // Black knights
@@ -326,6 +339,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_KNIGHT;
         sp->grid_x = (i == 0) ? 1 : 6;
         sp->grid_y = 7;
+        sp->frames = 0;
 
     }
 
@@ -341,6 +355,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_ROOK;
         sp->grid_x = (i == 0) ? 0 : 7;
         sp->grid_y = 7;
+        sp->frames = 0;
 
     }
 
@@ -355,6 +370,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_KING;
         sp->grid_x = 4;
         sp->grid_y = 7;
+        sp->frames = 0;
    }
 
     // Black queen
@@ -368,6 +384,7 @@ void Renderer::resetBoard()
         sp->sprite_type = TYPE_QUEEN;
         sp->grid_x = 3;
         sp->grid_y = 7;
+        sp->frames = 0;
     }
 
 

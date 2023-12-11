@@ -66,6 +66,18 @@ enum Files {
     INVALID_FILE = -1
 };
 
+enum Ranks {
+    FIRST_RANK   = 0,
+    SECOND_RANK  = 1,
+    THIRD_RANK   = 2,
+    FOURTH_RANK  = 3,
+    FIFTH_RANK   = 4,
+    SIXTH_RANK   = 5,
+    SEVENTH_RANK = 6,
+    EIGHTH_RANK   = 7,
+    INVALID_RANK = -1
+};
+
 struct ChessBoard {
 
     // Store the board as a series of "bit boards"
@@ -83,6 +95,16 @@ struct ChessBoard {
     uint64_t blackQueensBoard;
     uint64_t blackKingsBoard;
 
+    // Flags 
+    bool m_isWhitesTurn;
+    int m_can_en_passant_file;
+    bool m_whiteKingHasMoved;
+    bool m_blackKingHasMoved;
+    bool m_whiteARookHasMoved;
+    bool m_whiteHRookHasMoved;
+    bool m_blackARookHasMoved;
+    bool m_blackHRookHasMoved;
+
 };
 
 class Chess {
@@ -94,31 +116,21 @@ class Chess {
         void resetBoard();
 
         void getLegalMovesForSquare(int x, int y, uint64_t& moveSquares, bool allowTakeKing = false);
+        void getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t& moveSquares, bool allowTakeKing = false);
         void printBoard();
 
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
+        void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
 
         bool kingIsInCheck(const ChessBoard& board, bool white);
 
     private:
 
-        enum PieceTypes getPieceForSquare(int x, int y);
+        enum PieceTypes getPieceForSquare(const ChessBoard& board, int x, int y);
         std::string prettyPiece          (enum PieceTypes piece);
-        void removePieceFromSquare       (enum PieceTypes type, int x, int y);
-        void addPieceToSquare            (enum PieceTypes type, int x, int y);
+        void removePieceFromSquare       (ChessBoard& board, enum PieceTypes type, int x, int y);
+        void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
         ChessBoard m_board;
-
-        // TODO: These members should move to the board, and functions that access them should take a 
-        // board as argument, so we can adapt these functions to work on boards which get modified 
-        // on the fly during minimax searching. 
-        bool m_isWhitesTurn;
-        int m_can_en_passant_file;
-        bool m_whiteKingHasMoved;
-        bool m_blackKingHasMoved;
-        bool m_whiteARookHasMoved;
-        bool m_whiteHRookHasMoved;
-        bool m_blackARookHasMoved;
-        bool m_blackHRookHasMoved;
 
 };
