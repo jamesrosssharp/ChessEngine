@@ -96,7 +96,7 @@ void UI::handleAKeyDown()
         
             // Check if move if legal
 
-            if (!m_legal_moves[m_highlighted_y][m_highlighted_x])
+            if (!(m_legal_moves & (1ULL << (m_highlighted_y*8 + m_highlighted_x))))
             { 
                 // Not legal - queue "Illegal move" to speech synth
                 printf("Illegal move!\n");
@@ -120,11 +120,11 @@ void UI::handleAKeyDown()
         m_square_selected = true;
         m_selected_square_x = m_highlighted_x;
         m_selected_square_y = m_highlighted_y;
-        m_ch->getLegalMovesForSquare(m_highlighted_x, m_highlighted_y, &m_legal_moves[0][0]);
+        m_ch->getLegalMovesForSquare(m_highlighted_x, m_highlighted_y, m_legal_moves);
     } 
 
     m_renderer->setSelectedSquare(m_square_selected, m_selected_square_x, m_selected_square_y);
-    m_renderer->setLegalMoves(&m_legal_moves[0][0]); 
+    m_renderer->setLegalMoves(m_legal_moves); 
 
 }
 
@@ -135,7 +135,5 @@ void UI::handleBKeyDown()
 
 void UI::clearLegalMoves()
 {
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            m_legal_moves[i][j] = false;
+    m_legal_moves = 0;        
 }

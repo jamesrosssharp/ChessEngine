@@ -79,12 +79,11 @@ void Chess::resetBoard()
 
 }
 
-void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
+void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares)
 {
     // Init: zero out legal moves
 
-    for (int i = 0; i < 64; i++)
-        moveSquares[i] = false;
+    moveSquares = 0;
 
     // First, find the piece which is on this square
 
@@ -121,7 +120,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
 
                 // If not, we can move here.
 
-                moveSquares[x + (y + i*multiplier)*8] = true;   
+                moveSquares |= 1ULL << (x + (y + i*multiplier)*8);   
             }
 
             // Simple capturing
@@ -141,7 +140,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                 if ((piece == BLACK_PAWN) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
 
 
-                moveSquares[xx + yy*8] = true;
+                moveSquares |= 1ULL << (xx + yy*8);
             }
 
             // En passant
@@ -157,7 +156,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                 if (! ( ((piece == WHITE_PAWN) && (m_can_en_passant_file == xx) && (getPieceForSquare(xx, yy - multiplier) & BLACK_PIECES)) ||
                         ((piece == BLACK_PAWN) && (m_can_en_passant_file == xx) && (getPieceForSquare(xx, yy - multiplier) & WHITE_PIECES)) )) continue;
 
-                moveSquares[xx + yy*8] = true;
+                moveSquares |= 1ULL << (xx + yy*8);
             }
 
             break;
@@ -180,7 +179,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     if ((piece == WHITE_KNIGHT) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
                     if ((piece == BLACK_KNIGHT) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
 
-                    moveSquares[xx + yy*8] = true;
+                    moveSquares |= 1ULL << (xx + yy*8);
                }
 
             }
@@ -205,7 +204,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                         if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
                         if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
 
-                        moveSquares[xx + yy*8] = true;
+                        moveSquares |= 1ULL << (xx + yy*8);
                   
                         if ((piece == WHITE_BISHOP) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_BISHOP) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
@@ -236,7 +235,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                         if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
                         if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
 
-                        moveSquares[xx + yy*8] = true;
+                        moveSquares |= 1ULL << (xx + yy*8);
                   
                         if ((piece == WHITE_ROOK) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_ROOK) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
@@ -266,7 +265,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                         if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) == BLACK_KING)) break;
                         if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) == WHITE_KING)) break;
 
-                        moveSquares[xx + yy*8] = true;
+                        moveSquares |= 1ULL << (xx + yy*8);
                   
                         if ((piece == WHITE_QUEEN) && (getPieceForSquare(xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_QUEEN) && (getPieceForSquare(xx, yy) & WHITE_PIECES)) break;
@@ -294,7 +293,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     if ((piece == WHITE_KING) && (getPieceForSquare(xx, yy) == BLACK_KING)) continue;
                     if ((piece == BLACK_KING) && (getPieceForSquare(xx, yy) == WHITE_KING)) continue;
 
-                    moveSquares[xx + yy*8] = true;
+                    moveSquares |= 1ULL << (xx + yy*8);
               
                }
 
@@ -310,7 +309,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     (getPieceForSquare(6,0) == NO_PIECE) &&
                     !m_whiteHRookHasMoved)
                 {
-                    moveSquares[6] = true;
+                    moveSquares |= 1ULL << 6;
                 }
 
                 // Check Queen side castling
@@ -319,7 +318,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     (getPieceForSquare(1,0) == NO_PIECE) &&
                     !m_whiteARookHasMoved)
                 {
-                    moveSquares[2] = true;
+                    moveSquares |= 1ULL << 2;
                 }
 
             }
@@ -332,7 +331,7 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     (getPieceForSquare(6,7) == NO_PIECE) &&
                     !m_blackHRookHasMoved)
                 {
-                    moveSquares[6 + 7*8] = true;
+                    moveSquares |= 1ULL << (6 + 7*8);
                 }
 
                 // Check Queen side castling
@@ -341,16 +340,11 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                     (getPieceForSquare(1,7) == NO_PIECE) &&
                     !m_blackARookHasMoved)
                 {
-                    moveSquares[2 + 7*8] = true;
+                    moveSquares |= 1ULL << (2 + 7*8);
                 }
 
             }
-
-
-
             break;
-     
-     
         default:
            break; 
     }

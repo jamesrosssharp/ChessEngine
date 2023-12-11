@@ -74,7 +74,7 @@ class Renderer {
 
         void setSelectedSquare(bool squareSelected, int x, int y);
 
-        void setLegalMoves(bool* legalMoves);
+        void setLegalMoves(uint64_t);
 
         void movePiece(int x1, int y1, int x2, int y2, bool ep, bool castle_kings_side, bool castle_queens_side);
 
@@ -107,7 +107,7 @@ class Renderer {
         int  m_selected_square_x = 0;
         int  m_selected_square_y = 0;
 
-        bool m_legal_moves[8][8];
+        uint64_t m_legal_moves;
         bool m_animating;
 };
 

@@ -54,9 +54,7 @@ Renderer::Renderer()
         m_chessmen_black[i].visible = false;
     }
 
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            m_legal_moves[i][j] = false;
+    m_legal_moves = 0;
 }
 
 Renderer::~Renderer()
@@ -166,7 +164,7 @@ float Renderer::renderScene(int w, int h)
         for (int j = 0; j < 8; j++)
         {
 
-            if (m_legal_moves[j][i])
+            if (m_legal_moves & (1ULL << (i + 8*j)))
             {
 
                 float x1 = i/4.0 - 1.0 ;
@@ -477,9 +475,9 @@ void Renderer::setSelectedSquare(bool squareSelected, int x, int y)
 
 }
 
-void Renderer::setLegalMoves(bool* legalMoves)
+void Renderer::setLegalMoves(uint64_t legalMoves)
 {
-    memcpy(&m_legal_moves[0][0], legalMoves, sizeof(m_legal_moves));
+    m_legal_moves = legalMoves;
 }
 
 void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep, bool castle_kings_side, bool castle_queens_side)

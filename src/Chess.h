@@ -93,7 +93,7 @@ class Chess {
 
         void resetBoard();
 
-        void getLegalMovesForSquare(int x, int y, bool *moveSquares);
+        void getLegalMovesForSquare(int x, int y, uint64_t& moveSquares);
         void printBoard();
 
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);

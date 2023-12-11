@@ -63,7 +63,7 @@ class UI
         int     m_selected_square_y;
         bool    m_square_selected;
 
-        bool    m_legal_moves[8][8];
+        uint64_t    m_legal_moves;
 
         Chess*  m_ch;
 };
