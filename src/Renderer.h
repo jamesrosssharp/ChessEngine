@@ -78,6 +78,8 @@ class Renderer {
 
         void movePiece(int x1, int y1, int x2, int y2, bool ep);
 
+        bool animating() { return m_animating; }
+
     private:
 
         void renderSprite(struct RenderSprite* sp, bool white);
@@ -106,6 +108,6 @@ class Renderer {
         int  m_selected_square_y = 0;
 
         bool m_legal_moves[8][8];
-
+        bool m_animating;
 };
 

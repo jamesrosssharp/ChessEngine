@@ -449,13 +449,15 @@ void Renderer::renderSprite(struct RenderSprite* sp, bool white)
     sp->y += sp->vy;
 
     if (sp->frames)
-        sp->frames--;
-    if (sp->frames == 0)
     {
-        sp->vx = 0;
-        sp->vy = 0;
+        sp->frames--;
+        if (sp->frames == 0)
+        {
+            sp->vx = 0;
+            sp->vy = 0;
+            m_animating = false;
+        }
     }
-
 }
 
 void Renderer::setHighlightedSquare(int x, int y)
@@ -526,6 +528,8 @@ void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep)
         piece->vx = (x2 - x1)/4.0 / frames;
         piece->vy = (y2 - y1)/4.0 / frames;
         piece->frames = frames;
+    
+        m_animating = true;
     }
 }
 

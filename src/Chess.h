@@ -102,14 +102,22 @@ class Chess {
     private:
 
         enum PieceTypes getPieceForSquare(int x, int y);
-        std::string prettyPiece(enum PieceTypes piece);
-        void removePieceFromSquare(enum PieceTypes type, int x, int y);
-        void addPieceToSquare(enum PieceTypes type, int x, int y);
+        std::string prettyPiece          (enum PieceTypes piece);
+        void removePieceFromSquare       (enum PieceTypes type, int x, int y);
+        void addPieceToSquare            (enum PieceTypes type, int x, int y);
 
         ChessBoard m_board;
 
+        // TODO: These members should move to the board, and functions that access them should take a 
+        // board as argument, so we can adapt these functions to work on boards which get modified 
+        // on the fly during minimax searching. 
         bool m_isWhitesTurn;
-
         int m_can_en_passant_file;
+        bool m_whiteKingHasMoved;
+        bool m_blackKingHasMoved;
+        bool m_whiteARookHasMoved;
+        bool m_whiteHRookHasMoved;
+        bool m_blackARookHasMoved;
+        bool m_blackHRookHasMoved;
 
 };

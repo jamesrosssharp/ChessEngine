@@ -69,6 +69,14 @@ void Chess::resetBoard()
     m_isWhitesTurn = true;
 
     m_can_en_passant_file = INVALID_FILE;
+    m_whiteKingHasMoved = false;
+    m_blackKingHasMoved = false;
+    m_whiteARookHasMoved = false;
+    m_whiteHRookHasMoved = false;
+    m_blackARookHasMoved = false;
+    m_blackHRookHasMoved = false;
+
+
 }
 
 void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
@@ -291,6 +299,54 @@ void Chess::getLegalMovesForSquare(int x, int y, bool *moveSquares)
                }
 
             }
+
+            // Check for castling moves
+
+            if ((piece == WHITE_KING) && (!m_whiteKingHasMoved))
+            {
+
+                // Check King side castling
+                if ((getPieceForSquare(5,0) == NO_PIECE) &&
+                    (getPieceForSquare(6,0) == NO_PIECE) &&
+                    !m_whiteHRookHasMoved)
+                {
+                    moveSquares[6] = true;
+                }
+
+                // Check Queen side castling
+                if ((getPieceForSquare(3,0) == NO_PIECE) &&
+                    (getPieceForSquare(2,0) == NO_PIECE) &&
+                    (getPieceForSquare(1,0) == NO_PIECE) &&
+                    !m_whiteARookHasMoved)
+                {
+                    moveSquares[2] = true;
+                }
+
+            }
+
+            if ((piece == BLACK_KING) && (!m_blackKingHasMoved))
+            {
+
+                // Check King side castling
+                if ((getPieceForSquare(5,7) == NO_PIECE) &&
+                    (getPieceForSquare(6,7) == NO_PIECE) &&
+                    !m_blackHRookHasMoved)
+                {
+                    moveSquares[6 + 7*8] = true;
+                }
+
+                // Check Queen side castling
+                if ((getPieceForSquare(3,7) == NO_PIECE) &&
+                    (getPieceForSquare(2,7) == NO_PIECE) &&
+                    (getPieceForSquare(1,7) == NO_PIECE) &&
+                    !m_blackARookHasMoved)
+                {
+                    moveSquares[2 + 7*8] = true;
+                }
+
+            }
+
+
 
             break;
      
@@ -536,6 +592,65 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
     }
     else
         m_can_en_passant_file = INVALID_FILE;
+
+    // If this piece is a king, flag that the king has moved
+    if (start_piece == WHITE_KING)
+        m_whiteKingHasMoved = true;
+    else if (start_piece == BLACK_KING)
+        m_blackKingHasMoved = true;
+
+    // Check if rooks have moved (disable castle)
+    if (start_piece == WHITE_ROOK)
+    {
+        if (x1 == 0) m_whiteARookHasMoved = true;
+        else if (x1 == 7) m_whiteHRookHasMoved = true;
+    }
+    else if (start_piece == BLACK_ROOK)
+    {
+        if (x1 == 0) m_blackARookHasMoved = true;
+        else if (x1 == 7) m_blackHRookHasMoved = true;
+    } 
+
+    // Check for castling
+
+    if (start_piece == WHITE_KING && abs(x2 - x1) > 1)
+    {
+
+        if (x2 == 6)
+        {
+            // Castle King side
+            removePieceFromSquare(WHITE_ROOK, 7, 0);
+            addPieceToSquare(WHITE_ROOK, 5, 0);
+            m_whiteHRookHasMoved = true;
+        }
+        else if (x2 == 2)
+        {
+            // Castle Queen side
+            removePieceFromSquare(WHITE_ROOK, 0, 0);
+            addPieceToSquare(WHITE_ROOK, 3, 0);
+            m_whiteARookHasMoved = true;
+        }
+
+    }
+    else if (start_piece == BLACK_KING && abs(x2 - x1) > 1)
+    {
+
+        if (x2 == 6)
+        {
+            // Castle King side
+            removePieceFromSquare(BLACK_ROOK, 7, 7);
+            addPieceToSquare(BLACK_ROOK, 5, 7);
+            m_blackHRookHasMoved = true;
+        }
+        else if (x2 == 2)
+        {
+            // Castle Queen side
+            removePieceFromSquare(BLACK_ROOK, 0, 7);
+            addPieceToSquare(BLACK_ROOK, 3, 7);
+            m_blackARookHasMoved = true;
+        }
+
+    }
 
     removePieceFromSquare(start_piece, x1, y1);
     addPieceToSquare(start_piece, x2, y2);
