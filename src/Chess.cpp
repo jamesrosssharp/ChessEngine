@@ -623,13 +623,13 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     // Check if rooks have moved (disable castle)
     if (start_piece == WHITE_ROOK)
     {
-        if (x1 == 0) board.m_whiteARookHasMoved = true;
-        else if (x1 == 7) board.m_whiteHRookHasMoved = true;
+        if (x1 == A_FILE) board.m_whiteARookHasMoved = true;
+        else if (x1 == H_FILE) board.m_whiteHRookHasMoved = true;
     }
     else if (start_piece == BLACK_ROOK)
     {
-        if (x1 == 0) board.m_blackARookHasMoved = true;
-        else if (x1 == 7) board.m_blackHRookHasMoved = true;
+        if (x1 == A_FILE) board.m_blackARookHasMoved = true;
+        else if (x1 == H_FILE) board.m_blackHRookHasMoved = true;
     } 
 
     // Check for castling
