@@ -615,7 +615,7 @@ void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_king
 
     // Check for castling
 
-    if (start_piece == WHITE_KING && abs(x2 - x1) > 1)
+    if ((start_piece == WHITE_KING) && (abs(x2 - x1) > 1))
     {
 
         if (x2 == 6)
@@ -636,7 +636,7 @@ void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_king
         }
 
     }
-    else if (start_piece == BLACK_KING && abs(x2 - x1) > 1)
+    else if ((start_piece == BLACK_KING) && (abs(x2 - x1) > 1))
     {
 
         if (x2 == 6)

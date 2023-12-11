@@ -570,7 +570,7 @@ void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep, bool castle_ki
         if (end_piece)
         {
 
-            end_piece->grid_x = 4;
+            end_piece->grid_x = 3;
             end_piece->grid_y = y1;
             constexpr int frames = 100;
             end_piece->vx = 3.0/4.0 / frames;
