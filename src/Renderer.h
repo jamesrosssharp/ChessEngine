@@ -76,7 +76,7 @@ class Renderer {
 
         void setLegalMoves(bool* legalMoves);
 
-        void movePiece(int x1, int y1, int x2, int y2, bool ep);
+        void movePiece(int x1, int y1, int x2, int y2, bool ep, bool castle_kings_side, bool castle_queens_side);
 
         bool animating() { return m_animating; }
 

@@ -482,7 +482,7 @@ void Renderer::setLegalMoves(bool* legalMoves)
     memcpy(&m_legal_moves[0][0], legalMoves, sizeof(m_legal_moves));
 }
 
-void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep)
+void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep, bool castle_kings_side, bool castle_queens_side)
 {
     // Find out which piece is on the square
 
@@ -530,6 +530,53 @@ void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep)
         piece->frames = frames;
     
         m_animating = true;
+    }
+
+    if (castle_kings_side)
+    {
+        for (int i = 0; i < kNChessmen; i++)
+        {
+            end_piece = &m_chessmen_white[i];
+            if ((end_piece->grid_x == 7) && (end_piece->grid_y == y1) && end_piece->visible) break;
+            end_piece = &m_chessmen_black[i];
+            if ((end_piece->grid_x == 7) && (end_piece->grid_y == y1) && end_piece->visible) break;
+            end_piece = nullptr;
+        }
+
+        if (end_piece)
+        {
+
+            end_piece->grid_x = 5;
+            end_piece->grid_y = y1;
+            constexpr int frames = 100;
+            end_piece->vx = -2.0/4.0 / frames;
+            end_piece->vy = 0;
+            end_piece->frames = frames;
+        
+
+        }
+    }
+    else if (castle_queens_side)
+    {
+        for (int i = 0; i < kNChessmen; i++)
+        {
+            end_piece = &m_chessmen_white[i];
+            if ((end_piece->grid_x == 0) && (end_piece->grid_y == y1) && end_piece->visible) break;
+            end_piece = &m_chessmen_black[i];
+            if ((end_piece->grid_x == 0) && (end_piece->grid_y == y1) && end_piece->visible) break;
+            end_piece = nullptr;
+        }
+
+        if (end_piece)
+        {
+
+            end_piece->grid_x = 4;
+            end_piece->grid_y = y1;
+            constexpr int frames = 100;
+            end_piece->vx = 3.0/4.0 / frames;
+            end_piece->vy = 0;
+            end_piece->frames = frames;
+        }
     }
 }
 

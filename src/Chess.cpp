@@ -558,10 +558,12 @@ void Chess::addPieceToSquare(enum PieceTypes type, int x, int y)
 
 }
 
-bool Chess::makeMove(int x1, int y1, int x2, int y2)
+void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side)
 {
 
-    bool ep = false;
+    ep = false;
+    castle_kings_side = false;
+    castle_queens_side = false;
 
     enum PieceTypes start_piece = getPieceForSquare(x1, y1);
     enum PieceTypes end_piece   = getPieceForSquare(x2, y2);
@@ -622,6 +624,7 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
             removePieceFromSquare(WHITE_ROOK, 7, 0);
             addPieceToSquare(WHITE_ROOK, 5, 0);
             m_whiteHRookHasMoved = true;
+            castle_kings_side = true;
         }
         else if (x2 == 2)
         {
@@ -629,6 +632,7 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
             removePieceFromSquare(WHITE_ROOK, 0, 0);
             addPieceToSquare(WHITE_ROOK, 3, 0);
             m_whiteARookHasMoved = true;
+            castle_queens_side = true;
         }
 
     }
@@ -641,6 +645,7 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
             removePieceFromSquare(BLACK_ROOK, 7, 7);
             addPieceToSquare(BLACK_ROOK, 5, 7);
             m_blackHRookHasMoved = true;
+            castle_kings_side = true;
         }
         else if (x2 == 2)
         {
@@ -648,6 +653,7 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
             removePieceFromSquare(BLACK_ROOK, 0, 7);
             addPieceToSquare(BLACK_ROOK, 3, 7);
             m_blackARookHasMoved = true;
+            castle_queens_side = true;
         }
 
     }
@@ -657,6 +663,5 @@ bool Chess::makeMove(int x1, int y1, int x2, int y2)
 
     printBoard();
 
-    return ep;
 }
 

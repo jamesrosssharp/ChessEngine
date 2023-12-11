@@ -96,8 +96,7 @@ class Chess {
         void getLegalMovesForSquare(int x, int y, bool *moveSquares);
         void printBoard();
 
-        /* returns whether the move was en passant or not */
-        bool makeMove(int x1, int y1, int x2, int y2);
+        void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
 
     private:
 
