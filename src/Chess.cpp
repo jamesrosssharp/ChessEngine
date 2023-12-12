@@ -123,12 +123,12 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
 
                 // We can only move 2 squares on first move.
 
-                if ((piece == WHITE_PAWN) && (i == 2) && (y != 1)) break;
-                if ((piece == BLACK_PAWN) && (i == 2) && (y != 6)) break;
+                if ((piece == WHITE_PAWN) && (i == 2) && (y != SECOND_RANK)) break;
+                if ((piece == BLACK_PAWN) && (i == 2) && (y != SEVENTH_RANK)) break;
 
                 // If not, we can move here.
 
-                moveSquares |= 1ULL << (x + (y + i*multiplier)*8);   
+                moveSquares |= COORD_TO_BIT(x, y + i*multiplier); 
             }
 
             // Simple capturing
@@ -138,8 +138,8 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                 int xx = x + p.first;
                 int yy = y + p.second*multiplier;
 
-                if (xx < 0) continue;
-                if (xx > 7) continue;
+                if (xx < A_FILE) continue;
+                if (xx > H_FILE) continue;
                 if ((piece == WHITE_PAWN) && !(getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
                 if ((piece == BLACK_PAWN) && !(getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
 
@@ -150,7 +150,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     if ((piece == BLACK_PAWN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
                 }
 
-                moveSquares |= 1ULL << (xx + yy*8);
+                moveSquares |= COORD_TO_BIT(xx, yy);
             }
 
             // En passant
@@ -160,13 +160,13 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                 int xx = x + p.first;
                 int yy = y + p.second*multiplier;
            
-                if (xx < 0) continue;
-                if (xx > 7) continue;
+                if (xx < A_FILE) continue;
+                if (xx > H_FILE) continue;
             
                 if (! ( ((piece == WHITE_PAWN) && (board.m_can_en_passant_file == xx) && (getPieceForSquare(board, xx, yy - multiplier) & BLACK_PIECES)) ||
                         ((piece == BLACK_PAWN) && (board.m_can_en_passant_file == xx) && (getPieceForSquare(board, xx, yy - multiplier) & WHITE_PIECES)) )) continue;
 
-                moveSquares |= 1ULL << (xx + yy*8);
+                moveSquares |= COORD_TO_BIT(xx, yy); 
             }
 
             break;
@@ -180,7 +180,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                int xx = x + p.first;
                int yy = y + p.second;
 
-               if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+               if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy < EIGHTH_RANK))
                {
                     if ((piece == WHITE_KNIGHT) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
                     if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
@@ -192,7 +192,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                         if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
                     }
 
-                    moveSquares |= 1ULL << (xx + yy*8);
+                    moveSquares |= COORD_TO_BIT(xx, yy); 
                }
 
             }
@@ -208,7 +208,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                    int xx = x + p.first * k;
                    int yy = y + p.second * k;
 
-                   if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+                   if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                    {
                         if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
                         if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
@@ -219,7 +219,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                             if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
                         }
 
-                        moveSquares |= 1ULL << (xx + yy*8);
+                        moveSquares |= COORD_TO_BIT(xx, yy); 
                   
                         if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
@@ -241,7 +241,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                    int xx = x + p.first * k;
                    int yy = y + p.second * k;
 
-                   if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+                   if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                    {
                         if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
                         if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
@@ -252,7 +252,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                             if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
                         }
 
-                        moveSquares |= 1ULL << (xx + yy*8);
+                        moveSquares |= COORD_TO_BIT(xx, yy); 
                   
                         if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
@@ -273,7 +273,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                    int xx = x + p.first * k;
                    int yy = y + p.second * k;
 
-                   if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+                   if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy < EIGHTH_RANK))
                    {
                         if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
                         if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
@@ -284,7 +284,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                             if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
                         }
 
-                        moveSquares |= 1ULL << (xx + yy*8);
+                        moveSquares |= COORD_TO_BIT(xx, yy); 
                   
                         if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
@@ -303,7 +303,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                int xx = x + p.first;
                int yy = y + p.second;
 
-               if ((xx >= 0) && (xx < 8) && (yy >= 0) && (yy < 8))
+               if ((xx >= A_FILE) && (xx < H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                {
                     if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
                     if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
@@ -314,7 +314,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                         if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
                     }
 
-                    moveSquares |= 1ULL << (xx + yy*8);
+                    moveSquares |= COORD_TO_BIT(xx, yy);
               
                }
 
@@ -330,7 +330,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
                     !board.m_whiteHRookHasMoved)
                 {
-                    moveSquares |= 1ULL << (G_FILE);
+                    moveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
                 }
 
                 // Check Queen side castling
@@ -339,7 +339,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
                     !board.m_whiteARookHasMoved)
                 {
-                    moveSquares |= 1ULL << (C_FILE);
+                    moveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
                 }
 
             }
@@ -352,7 +352,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
                     !board.m_blackHRookHasMoved)
                 {
-                    moveSquares |= 1ULL << (G_FILE + EIGHTH_RANK*8);
+                    moveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
                 }
 
                 // Check Queen side castling
@@ -361,7 +361,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
                     !board.m_blackARookHasMoved)
                 {
-                    moveSquares |= 1ULL << (C_FILE + EIGHTH_RANK*8);
+                    moveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
                 }
 
             }
@@ -378,7 +378,7 @@ void Chess::printBoard()
     {
         for (int x = 0; x <= 7; x++)
         {
-            uint64_t sq = 1ULL << (y*8 + x);
+            uint64_t sq = COORD_TO_BIT(x, y);
 
             if (m_board.whitePawnsBoard & sq)
                 printf("P");
@@ -414,7 +414,7 @@ void Chess::printBoard()
 
 enum PieceTypes Chess::getPieceForSquare(const ChessBoard& board, int x, int y)
 {
-    uint64_t sq = 1ULL << (y*8 + x);
+    uint64_t sq = COORD_TO_BIT(x, y);
 
     if (board.whitePawnsBoard & sq)
         return WHITE_PAWN; 
@@ -479,7 +479,7 @@ std::string Chess::prettyPiece(enum PieceTypes piece)
 
 void Chess::removePieceFromSquare(ChessBoard& board, enum PieceTypes type, int x, int y)
 {
-    uint64_t sq   = 1ULL << (x + y*8);
+    uint64_t sq   = COORD_TO_BIT(x, y);
 
     switch (type)
     {
@@ -527,7 +527,7 @@ void Chess::removePieceFromSquare(ChessBoard& board, enum PieceTypes type, int x
 void Chess::addPieceToSquare(ChessBoard& board, enum PieceTypes type, int x, int y)
 {
 
-    uint64_t sq   = 1ULL << (x + y*8);
+    uint64_t sq   = COORD_TO_BIT(x, y);
 
     switch (type)
     {
@@ -606,8 +606,8 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     }
 
     // If this move is a first move of a pawn, update "can_enpassant_file"
-    if (((start_piece == WHITE_PAWN) && (y1 == 1) && (y2 == 3)) ||
-        ((start_piece == BLACK_PAWN) && (y1 == 6) && (y2 == 4)))
+    if (((start_piece == WHITE_PAWN) && (y1 == SECOND_RANK) && (y2 == THIRD_RANK)) ||
+        ((start_piece == BLACK_PAWN) && (y1 == SEVENTH_RANK) && (y2 == FIFTH_RANK)))
     {
         board.m_can_en_passant_file = x1;
     }

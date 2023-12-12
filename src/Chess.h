@@ -78,6 +78,9 @@ enum Ranks {
     INVALID_RANK = -1
 };
 
+#define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
+
+
 struct ChessBoard {
 
     // Store the board as a series of "bit boards"
