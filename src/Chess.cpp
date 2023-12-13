@@ -290,7 +290,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                    int xx = x + p.first * k;
                    int yy = y + p.second * k;
 
-                   if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy < EIGHTH_RANK))
+                   if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                    {
                         if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
                         if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
@@ -724,7 +724,13 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     if (print)
     {
         printBoard(board);
-        if (kingIsInCheck(board, !board.m_isWhitesTurn)) printf("Check!\n");
+        if (kingIsInCheck(board, !board.m_isWhitesTurn))
+        {
+            if (movesForKing(board, !board.m_isWhitesTurn) == 0)
+                printf("Checkmate!\n");
+            else
+                printf("Check!\n");
+        }
     }
     board.m_isWhitesTurn = !board.m_isWhitesTurn;
 
@@ -732,6 +738,8 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
 
 bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 {
+    uint64_t legalMoves = 0;
+
     for (int x = 0; x < 8; x++)
     {
         for (int y = 0; y < 8; y++)
@@ -742,11 +750,15 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 (white && (type & BLACK_PIECES)))
             {
                     getLegalMovesForBoardSquare(board, x, y, temp, true);
-                    if (white && (board.whiteKingsBoard & temp)) return true;
-                    if (!white && (board.blackKingsBoard & temp)) return true;
+                    legalMoves |= temp;
             }
         }
     }
+
+    // We could and should exit early here, but for now, we won't as we want to debug easier...
+    //printBitBoard(legalMoves);
+    if (white && (board.whiteKingsBoard & legalMoves)) return true;
+    if (!white && (board.blackKingsBoard & legalMoves)) return true;
 
     return false;
 }
@@ -761,10 +773,29 @@ bool Chess::movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x
 
     makeMoveForBoard(boardCopy, x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side, false);
 
-    printBoard(boardCopy);
-
     bool check = kingIsInCheck(boardCopy, white);
 
     return check;
 
+}
+
+uint64_t Chess::movesForKing(const ChessBoard& board, bool white)
+{
+    uint64_t bb = (white) ? board.whiteKingsBoard : board.blackKingsBoard;
+
+    for (int x = 0; x < 8; x++)
+    {
+        for (int y = 0; y < 8; y++)
+        {
+            uint64_t sq = COORD_TO_BIT(x, y);
+
+            if (bb & sq) 
+            {
+                uint64_t temp = 0;
+                getLegalMovesForBoardSquare(board, x, y, temp);
+                return temp;
+            }
+        }
+    }
+    return 0;
 }

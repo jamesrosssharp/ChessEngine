@@ -125,12 +125,13 @@ class Chess {
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
         void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print = true);
 
-        bool kingIsInCheck(const ChessBoard& board, bool white);
 
     private:
 
         void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
+        bool kingIsInCheck(const ChessBoard& board, bool white);
+        uint64_t movesForKing(const ChessBoard& board, bool white); 
 
         enum PieceTypes getPieceForSquare(const ChessBoard& board, int x, int y);
         std::string prettyPiece          (enum PieceTypes piece);
