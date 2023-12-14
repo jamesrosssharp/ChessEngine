@@ -128,6 +128,8 @@ class Chess {
 
     private:
 
+        void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
+
         void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
         bool kingIsInCheck(const ChessBoard& board, bool white);

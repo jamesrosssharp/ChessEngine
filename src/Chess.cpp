@@ -322,7 +322,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                int xx = x + p.first;
                int yy = y + p.second;
 
-               if ((xx >= A_FILE) && (xx < H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
+               if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                {
                     if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
                     if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
@@ -731,7 +731,13 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
             else
                 printf("Check!\n");
         }
+    
+        double w, b;
+
+        evalBoard(board, w, b);
+        printf("Scores: white = %f  black = %f\n", w, b);
     }
+
     board.m_isWhitesTurn = !board.m_isWhitesTurn;
 
 }
@@ -799,3 +805,49 @@ uint64_t Chess::movesForKing(const ChessBoard& board, bool white)
     }
     return 0;
 }
+
+static double sum_bits_and_multiply(uint64_t bb, double multiplier)
+{
+    int sum = 0;
+    for (int i = 0; i < 64; i ++)
+        if (bb & (1ULL << i))
+            sum++;
+    return sum * multiplier;
+}
+
+void Chess::evalBoard(const ChessBoard& board, double& white_score, double& black_score)
+{
+
+    white_score = 0.0;
+    black_score = 0.0;
+
+    // Compute material
+    white_score += sum_bits_and_multiply(board.whitePawnsBoard, 1.0);
+    white_score += sum_bits_and_multiply(board.whiteKnightsBoard, 3.0);
+    white_score += sum_bits_and_multiply(board.whiteBishopsBoard, 3.0);
+    white_score += sum_bits_and_multiply(board.whiteRooksBoard, 5.0);
+    white_score += sum_bits_and_multiply(board.whiteQueensBoard, 9.0);
+
+    black_score += sum_bits_and_multiply(board.blackPawnsBoard, 1.0);
+    black_score += sum_bits_and_multiply(board.blackKnightsBoard, 3.0);
+    black_score += sum_bits_and_multiply(board.blackBishopsBoard, 3.0);
+    black_score += sum_bits_and_multiply(board.blackRooksBoard, 5.0);
+    black_score += sum_bits_and_multiply(board.blackQueensBoard, 9.0);
+
+    // Compute position
+
+
+    // Compute checkmate
+
+    if (kingIsInCheck(board, true) && (movesForKing(board, true) == 0))
+    {
+        black_score += 10000.0;
+    }
+
+    if (kingIsInCheck(board, false) && (movesForKing(board, false) == 0))
+    {
+        white_score += 10000.0;
+    }
+
+}
+
