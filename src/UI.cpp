@@ -38,9 +38,9 @@ UI::UI(Renderer* r, Chess* ch)    :
     m_highlighted_x(0),
     m_highlighted_y(0),
     m_renderer(r),
-    m_square_selected(false),
     m_selected_square_x(0),
     m_selected_square_y(0),
+    m_square_selected(false),
     m_ch(ch)
 {
     
@@ -48,6 +48,7 @@ UI::UI(Renderer* r, Chess* ch)    :
 
 void UI::handleLeftKeyDown()
 {
+    if (m_renderer->animating() || m_locked) return;
     if (m_renderer->animating()) return;
 
     if (m_highlighted_x > 0)
@@ -57,6 +58,7 @@ void UI::handleLeftKeyDown()
 
 void UI::handleRightKeyDown()
 {
+    if (m_renderer->animating() || m_locked) return;
     if (m_renderer->animating()) return;
     if (m_highlighted_x < 7)
         m_highlighted_x ++;
@@ -65,7 +67,7 @@ void UI::handleRightKeyDown()
 
 void UI::handleUpKeyDown()
 {
-    if (m_renderer->animating()) return;
+    if (m_renderer->animating() || m_locked) return;
     if (m_highlighted_y < 7)
         m_highlighted_y ++;
     m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
@@ -73,7 +75,7 @@ void UI::handleUpKeyDown()
 
 void UI::handleDownKeyDown()
 {
-    if (m_renderer->animating()) return;
+    if (m_renderer->animating() || m_locked) return;
     if (m_highlighted_y > 0)
         m_highlighted_y --;
     m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
@@ -83,7 +85,7 @@ bool UI::handleAKeyDown()
 {
     bool ret = false;
 
-    if (m_renderer->animating()) return false;
+    if (m_renderer->animating() || m_locked) return false;
     if (m_square_selected)
     {
         // If user already selected this square, deselect it 

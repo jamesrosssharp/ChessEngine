@@ -1,9 +1,9 @@
 /* vim: set et ts=4 sw=4: */
 
 /*
-        Chess Engine
+	ChessEngine : A chess engine written in C++ for SDL2
 
-    UI.cpp : User interface functions
+Game.h: Game engine
 
 License: MIT License
 
@@ -31,46 +31,38 @@ SOFTWARE.
 
 #pragma once
 
+#include <thread>
+#include <semaphore>
+
 #include "Renderer.h"
+#include "UI.h"
 #include "Chess.h"
 
-#include <atomic>
 
-class UI
+class Game 
 {
     public:
-        
-        UI(Renderer* r, Chess* ch);
+
+        Game();        
 
         void handleLeftKeyDown();
         void handleRightKeyDown();
         void handleUpKeyDown();
         void handleDownKeyDown();
-        bool handleAKeyDown();
+        void handleAKeyDown();
         void handleBKeyDown();
 
-        void lock() { m_locked = true; }
-        void unlock() {m_locked = false; }
+        void chessThread(); 
 
+        float renderScene(int w, int h);
+    
     private:
+        std::thread m_chessThread;
+        std::binary_semaphore m_chessSem;
+        std::atomic<bool> m_threadExit;
 
-        void clearLegalMoves();
+        Renderer m_r;
+        Chess    m_ch;
+        UI       m_u;
 
-        int     m_highlighted_x;
-        int     m_highlighted_y;
-
-        bool    m_is_active;
-
-        Renderer* m_renderer;
-
-        int     m_selected_square_x;
-        int     m_selected_square_y;
-        bool    m_square_selected;
-
-        uint64_t    m_legal_moves;
-
-        Chess*  m_ch;
-
-        std::atomic<bool> m_locked;
 };
-

@@ -45,25 +45,20 @@ const std::vector<std::pair<int, int>> rookMoves = {{1, 0}, {0, 1},  {-1, 0}, {0
 const double whitePawnPositionWeights[64] = {
 /*a1 -> h1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 /*a2 -> h2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-/*a3 -> h3 */ 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
-/*a4 -> h4 */ 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0,
+/*a3 -> h3 */ 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0,
+/*a4 -> h4 */ 0.0, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0,
 /*a5 -> h5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 /*a6 -> h6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-/*a7 -> h7 */ 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0,
+/*a7 -> h7 */ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
 /*a8 -> h8 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 };
 
 
 
-Chess::Chess()  : 
-    m_chessSem{0},
-    m_threadExit{false}
+Chess::Chess()  
 {
     resetBoard();
     printBoard(m_board);
-
-    // Create our game thread
-    m_chessThread = std::thread([](void* a) { Chess* ch = (Chess*)a; ch->chessThread(); }, this);
 
 }
 
@@ -899,17 +894,73 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
 
 }
 
-void Chess::computeNextMove() {
-    m_chessSem.release();
-}
-
-void Chess::chessThread()
+void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 {
-    while (! m_threadExit)
+    uint64_t bb = (m_board.m_isWhitesTurn) ? m_board.allWhitePieces() : m_board.allBlackPieces();
+
+    double my_score = -10000.0;
+
+    for (int x = 0; x < 8; x++)
     {
-        m_chessSem.acquire();
+        for (int y = 0; y < 8; y++)
+        {
+            uint64_t sq = COORD_TO_BIT(x, y);
 
-        printf("Computing next move...\n");
+            if (bb & sq) 
+            {
+                uint64_t temp = 0;
+                getLegalMovesForBoardSquare(m_board, x, y, temp);
+            
+                for (int xx = 0; xx < 8; xx++)
+                {
+        
+                    for (int yy = 0; yy < 8; yy++)
+                    {
+                        // Compute score
+           
+                        if (temp & COORD_TO_BIT(xx, yy))
+                        {
+
+                            ChessBoard clone = m_board;
+                            bool ep;
+                            bool castle_kings_side;
+                            bool castle_queens_side;
+
+                            makeMoveForBoard(clone, x, y, xx, yy, ep, castle_kings_side, castle_queens_side, false);
+                       
+                            double w = 0.0;
+                            double b = 0.0;
+
+                            evalBoard(clone, w, b);
+
+                            if (m_board.m_isWhitesTurn)
+                            {
+                                if ((w - b) > my_score)
+                                {
+                                    my_score = w - b;
+                                    x1 = x;
+                                    x2 = xx;
+                                    y1 = y;
+                                    y2 = yy;
+                                }
+                            }
+                            else
+                            {
+                                if ((b - w) > my_score)
+                                {
+                                    my_score = b - w;
+                                    x1 = x;
+                                    x2 = xx;
+                                    y1 = y;
+                                    y2 = yy;
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-}
 
+}

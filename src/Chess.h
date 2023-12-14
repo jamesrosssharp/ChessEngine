@@ -35,8 +35,6 @@ SOFTWARE.
 #include <cstdint>
 
 #include <string>
-#include <thread>
-#include <semaphore>
 
 enum PieceTypes {
     WHITE_PAWN      = 1 << 0,
@@ -148,9 +146,7 @@ class Chess {
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
         void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print = true);
 
-        void computeNextMove();
-
-        void chessThread();
+        void getBestMove(int& x1, int& y1, int& x2, int& y2); 
 
     private:
 
@@ -167,10 +163,5 @@ class Chess {
         void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
         ChessBoard m_board;
-
-        std::thread m_chessThread;
-        std::binary_semaphore m_chessSem;
-
-        std::atomic<bool> m_threadExit;
-
+ 
 };

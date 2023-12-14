@@ -38,15 +38,16 @@ SOFTWARE.
 
 #include <unistd.h>
 
+#include "Game.h"
+
 #define WINDOW_WIDTH 	854
 #define WINDOW_HEIGHT 	854
 
-#include "Renderer.h"
-#include "UI.h"
-#include "Chess.h"
-
 int main(int argc, char** argv)
 {
+    (void)argc;
+    (void)argv;
+
 
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0)
     {
@@ -61,19 +62,13 @@ int main(int argc, char** argv)
 
     (void)Context;
 
-    Renderer r;
-    Chess    ch;
-    UI       u(&r, &ch);
-
-    r.resetBoard();
+    Game g;
 
     bool running = true;
     bool full_screen = false;
 
     while (running)
     {
-
-        bool playerMadeMove = false;
 
         SDL_Event Event;
         while (SDL_PollEvent(&Event))
@@ -97,22 +92,22 @@ int main(int argc, char** argv)
                         }
                         break;
                     case 'a':
-                        playerMadeMove = u.handleAKeyDown();
+                        g.handleAKeyDown();
                         break;
                     case 'b':
-                        u.handleBKeyDown();
+                        g.handleBKeyDown();
                         break;
                     case SDLK_UP:
-                        u.handleUpKeyDown();
+                        g.handleUpKeyDown();
                         break;
                     case SDLK_DOWN:
-                        u.handleDownKeyDown();
+                        g.handleDownKeyDown();
                         break;
                     case SDLK_LEFT:
-                        u.handleLeftKeyDown();
+                        g.handleLeftKeyDown();
                         break;
                     case SDLK_RIGHT:
-                        u.handleRightKeyDown();
+                        g.handleRightKeyDown();
                         break;
                     default:
                         break;
@@ -134,14 +129,9 @@ int main(int argc, char** argv)
     
         int w, h;
 
-        if (playerMadeMove)
-        {
-            ch.computeNextMove();
-        } 
-        
         SDL_GetWindowSize(window, &w, &h);
 
-        r.renderScene(w, h);
+        g.renderScene(w, h);
 
         SDL_GL_SwapWindow(window);
 
