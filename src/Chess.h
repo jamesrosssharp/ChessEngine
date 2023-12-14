@@ -35,6 +35,8 @@ SOFTWARE.
 #include <cstdint>
 
 #include <string>
+#include <thread>
+#include <semaphore>
 
 enum PieceTypes {
     WHITE_PAWN      = 1 << 0,
@@ -108,6 +110,27 @@ struct ChessBoard {
     bool m_blackARookHasMoved;
     bool m_blackHRookHasMoved;
 
+    uint64_t allWhitePieces() const
+    {
+        return  whitePawnsBoard |
+                whiteKnightsBoard |
+                whiteBishopsBoard |
+                whiteRooksBoard |
+                whiteQueensBoard |
+                whiteKingsBoard;
+    }
+
+    uint64_t allBlackPieces() const
+    {
+        return  blackPawnsBoard |
+                blackKnightsBoard |
+                blackBishopsBoard |
+                blackRooksBoard |
+                blackQueensBoard |
+                blackKingsBoard;
+    }
+
+
 };
 
 class Chess {
@@ -125,6 +148,9 @@ class Chess {
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
         void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print = true);
 
+        void computeNextMove();
+
+        void chessThread();
 
     private:
 
@@ -133,7 +159,7 @@ class Chess {
         void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
         bool kingIsInCheck(const ChessBoard& board, bool white);
-        uint64_t movesForKing(const ChessBoard& board, bool white); 
+        uint64_t movesForPlayer(const ChessBoard& board, bool white); 
 
         enum PieceTypes getPieceForSquare(const ChessBoard& board, int x, int y);
         std::string prettyPiece          (enum PieceTypes piece);
@@ -141,5 +167,10 @@ class Chess {
         void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
         ChessBoard m_board;
+
+        std::thread m_chessThread;
+        std::binary_semaphore m_chessSem;
+
+        std::atomic<bool> m_threadExit;
 
 };

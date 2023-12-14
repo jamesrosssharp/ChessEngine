@@ -79,9 +79,11 @@ void UI::handleDownKeyDown()
     m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
 }
 
-void UI::handleAKeyDown()
+bool UI::handleAKeyDown()
 {
-    if (m_renderer->animating()) return;
+    bool ret = false;
+
+    if (m_renderer->animating()) return false;
     if (m_square_selected)
     {
         // If user already selected this square, deselect it 
@@ -112,6 +114,7 @@ void UI::handleAKeyDown()
                 m_renderer->movePiece(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y, ep, castle_kings_side, castle_queens_side);
                 clearLegalMoves();
                 m_square_selected = false;
+                ret = true;
             }    
         }
     }
@@ -125,6 +128,8 @@ void UI::handleAKeyDown()
 
     m_renderer->setSelectedSquare(m_square_selected, m_selected_square_x, m_selected_square_y);
     m_renderer->setLegalMoves(m_legal_moves); 
+
+    return ret;
 
 }
 

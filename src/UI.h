@@ -44,7 +44,7 @@ class UI
         void handleRightKeyDown();
         void handleUpKeyDown();
         void handleDownKeyDown();
-        void handleAKeyDown();
+        bool handleAKeyDown();
         void handleBKeyDown();
 
 

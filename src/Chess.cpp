@@ -42,10 +42,29 @@ const std::vector<std::pair<int, int>> kingMoves = {{1, 0}, {1, 1}, {0, 1}, {-1,
 const std::vector<std::pair<int, int>> bishopMoves = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 const std::vector<std::pair<int, int>> rookMoves = {{1, 0}, {0, 1},  {-1, 0}, {0, -1}};
 
-Chess::Chess()
+const double whitePawnPositionWeights[64] = {
+/*a1 -> h1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+/*a2 -> h2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+/*a3 -> h3 */ 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
+/*a4 -> h4 */ 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0,
+/*a5 -> h5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+/*a6 -> h6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+/*a7 -> h7 */ 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0,
+/*a8 -> h8 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+};
+
+
+
+Chess::Chess()  : 
+    m_chessSem{0},
+    m_threadExit{false}
 {
     resetBoard();
     printBoard(m_board);
+
+    // Create our game thread
+    m_chessThread = std::thread([](void* a) { Chess* ch = (Chess*)a; ch->chessThread(); }, this);
+
 }
 
 void Chess::resetBoard()
@@ -726,7 +745,7 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
         printBoard(board);
         if (kingIsInCheck(board, !board.m_isWhitesTurn))
         {
-            if (movesForKing(board, !board.m_isWhitesTurn) == 0)
+            if (movesForPlayer(board, !board.m_isWhitesTurn) == 0)
                 printf("Checkmate!\n");
             else
                 printf("Check!\n");
@@ -785,9 +804,13 @@ bool Chess::movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x
 
 }
 
-uint64_t Chess::movesForKing(const ChessBoard& board, bool white)
+uint64_t Chess::movesForPlayer(const ChessBoard& board, bool white)
 {
-    uint64_t bb = (white) ? board.whiteKingsBoard : board.blackKingsBoard;
+    uint64_t bb = (white) ? board.allWhitePieces() : board.allBlackPieces();
+    uint64_t legalMoves = 0;
+
+    ChessBoard b = board;
+    b.m_isWhitesTurn = white;
 
     for (int x = 0; x < 8; x++)
     {
@@ -798,12 +821,12 @@ uint64_t Chess::movesForKing(const ChessBoard& board, bool white)
             if (bb & sq) 
             {
                 uint64_t temp = 0;
-                getLegalMovesForBoardSquare(board, x, y, temp);
-                return temp;
+                getLegalMovesForBoardSquare(b, x, y, temp);
+                legalMoves |= temp;
             }
         }
     }
-    return 0;
+    return legalMoves;
 }
 
 static double sum_bits_and_multiply(uint64_t bb, double multiplier)
@@ -814,6 +837,27 @@ static double sum_bits_and_multiply(uint64_t bb, double multiplier)
             sum++;
     return sum * multiplier;
 }
+
+static double multiply_bits_with_weights(uint64_t bb, const double* weights)
+{
+    int sum = 0;
+    for (int i = 0; i < 64; i ++)
+        if (bb & (1ULL << i))
+            sum += weights[i];
+    return sum;
+}
+
+static double multiply_bits_with_weights_reverse(uint64_t bb, const double* weights)
+{
+    int sum = 0;
+    for (int x = 0; x < 8; x ++)
+        for (int y = 0; y < 8; y++)
+            if (bb & (1ULL << (x + y*8)))
+                sum += weights[x + (7-y)*8 ];
+    return sum;
+}
+
+
 
 void Chess::evalBoard(const ChessBoard& board, double& white_score, double& black_score)
 {
@@ -828,26 +872,44 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
     white_score += sum_bits_and_multiply(board.whiteRooksBoard, 5.0);
     white_score += sum_bits_and_multiply(board.whiteQueensBoard, 9.0);
 
+    white_score += multiply_bits_with_weights(board.whitePawnsBoard, whitePawnPositionWeights);
+
     black_score += sum_bits_and_multiply(board.blackPawnsBoard, 1.0);
     black_score += sum_bits_and_multiply(board.blackKnightsBoard, 3.0);
     black_score += sum_bits_and_multiply(board.blackBishopsBoard, 3.0);
     black_score += sum_bits_and_multiply(board.blackRooksBoard, 5.0);
     black_score += sum_bits_and_multiply(board.blackQueensBoard, 9.0);
 
+    black_score += multiply_bits_with_weights_reverse(board.blackPawnsBoard, whitePawnPositionWeights);
+
     // Compute position
 
 
     // Compute checkmate
 
-    if (kingIsInCheck(board, true) && (movesForKing(board, true) == 0))
+    if (kingIsInCheck(board, true) && (movesForPlayer(board, true) == 0))
     {
         black_score += 10000.0;
     }
 
-    if (kingIsInCheck(board, false) && (movesForKing(board, false) == 0))
+    if (kingIsInCheck(board, false) && (movesForPlayer(board, false) == 0))
     {
         white_score += 10000.0;
     }
 
+}
+
+void Chess::computeNextMove() {
+    m_chessSem.release();
+}
+
+void Chess::chessThread()
+{
+    while (! m_threadExit)
+    {
+        m_chessSem.acquire();
+
+        printf("Computing next move...\n");
+    }
 }
 

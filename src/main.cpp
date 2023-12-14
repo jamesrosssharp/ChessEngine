@@ -72,6 +72,9 @@ int main(int argc, char** argv)
 
     while (running)
     {
+
+        bool playerMadeMove = false;
+
         SDL_Event Event;
         while (SDL_PollEvent(&Event))
         {
@@ -94,7 +97,7 @@ int main(int argc, char** argv)
                         }
                         break;
                     case 'a':
-                        u.handleAKeyDown();
+                        playerMadeMove = u.handleAKeyDown();
                         break;
                     case 'b':
                         u.handleBKeyDown();
@@ -131,6 +134,11 @@ int main(int argc, char** argv)
     
         int w, h;
 
+        if (playerMadeMove)
+        {
+            ch.computeNextMove();
+        } 
+        
         SDL_GetWindowSize(window, &w, &h);
 
         r.renderScene(w, h);
