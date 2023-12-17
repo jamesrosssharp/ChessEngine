@@ -35,6 +35,7 @@ SOFTWARE.
 #include <cstdint>
 
 #include <string>
+#include <vector>
 
 enum PieceTypes {
     WHITE_PAWN      = 1 << 0,
@@ -131,6 +132,30 @@ struct ChessBoard {
 
 };
 
+struct ChessMove {
+
+    ChessMove() :
+        x1(INVALID_FILE),
+        y1(INVALID_RANK),
+        x2(INVALID_FILE),
+        y2(INVALID_RANK)
+    {
+
+    }
+
+    ChessMove(int _x1, int _y1, int _x2, int _y2) :
+        x1(_x1),
+        y1(_y1),
+        x2(_x2),
+        y2(_y2)
+    {
+
+    }
+
+    int x1, y1;
+    int x2, y2;
+};
+
 class Chess {
 
     public:
@@ -148,9 +173,15 @@ class Chess {
 
         void getBestMove(int& x1, int& y1, int& x2, int& y2); 
 
+        void getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec);
+
     private:
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
+
+        double minimax(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos);
+        double minimaxAlphaBeta(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
+
 
         void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);

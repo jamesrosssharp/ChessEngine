@@ -42,18 +42,73 @@ const std::vector<std::pair<int, int>> kingMoves = {{1, 0}, {1, 1}, {0, 1}, {-1,
 const std::vector<std::pair<int, int>> bishopMoves = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 const std::vector<std::pair<int, int>> rookMoves = {{1, 0}, {0, 1},  {-1, 0}, {0, -1}};
 
-const double whitePawnPositionWeights[64] = {
-/*a1 -> h1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-/*a2 -> h2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-/*a3 -> h3 */ 0.0, 0.0, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0,
-/*a4 -> h4 */ 0.0, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0,
-/*a5 -> h5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-/*a6 -> h6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-/*a7 -> h7 */ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
-/*a8 -> h8 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+const double pawnPositionWeights[64] = {
+      0,  0,  0,  0,  0,  0,  0,  0,
+    50,  50, 50, 50, 50, 50, 50, 50,
+    10,  10, 20, 30, 30, 20, 10, 10,
+     5,  5,  10, 25, 25, 10,  5,  5,
+     0,  0,  0,  20, 20,  0,  0,  0,
+     5, -5, -10,  0,  0,-10, -5,  5,
+     5, 10, 10, -20,-20, 10, 10,  5,
+     0,  0,  0,  0,  0,  0,  0,  0 
 };
 
+const double knightPositionWeights[64] = {
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50,
+};
 
+const double bishopsPositionWeights[64] = {
+-20,-10,-10,-10,-10,-10,-10,-20,
+-10,  0,  0,  0,  0,  0,  0,-10,
+-10,  0,  5, 10, 10,  5,  0,-10,
+-10,  5,  5, 10, 10,  5,  5,-10,
+-10,  0, 10, 10, 10, 10,  0,-10,
+-10, 10, 10, 10, 10, 10, 10,-10,
+-10,  5,  0,  0,  0,  0,  5,-10,
+-20,-10,-10,-10,-10,-10,-10,-20,
+};
+
+const double rooksPositionWeights[64] = {
+ 0,  0,  0,  0,  0,  0,  0,  0,
+  5, 10, 10, 10, 10, 10, 10,  5,
+ -5,  0,  0,  0,  0,  0,  0, -5,
+ -5,  0,  0,  0,  0,  0,  0, -5,
+ -5,  0,  0,  0,  0,  0,  0, -5,
+ -5,  0,  0,  0,  0,  0,  0, -5,
+ -5,  0,  0,  0,  0,  0,  0, -5,
+  0,  0,  0,  5,  5,  0,  0,  0
+};
+
+const double queenPositionWeights[64] = {
+-20,-10,-10, -5, -5,-10,-10,-20,
+-10,  0,  0,  0,  0,  0,  0,-10,
+-10,  0,  5,  5,  5,  5,  0,-10,
+ -5,  0,  5,  5,  5,  5,  0, -5,
+  0,  0,  5,  5,  5,  5,  0, -5,
+-10,  5,  5,  5,  5,  5,  0,-10,
+-10,  0,  5,  0,  0,  0,  0,-10,
+-20,-10,-10, -5, -5,-10,-10,-20
+};
+
+const double kingPositionWeights[64] = {
+-30,-40,-40,-50,-50,-40,-40,-30,
+-30,-40,-40,-50,-50,-40,-40,-30,
+-30,-40,-40,-50,-50,-40,-40,-30,
+-30,-40,-40,-50,-50,-40,-40,-30,
+-20,-30,-30,-40,-40,-30,-30,-20,
+-10,-20,-20,-20,-20,-20,-20,-10,
+ 20, 20,  0,  0,  0,  0, 20, 20,
+ 20, 30, 10,  0,  0, 10, 30, 20
+};
+
+#define INFINITY 1e10
 
 Chess::Chess()  
 {
@@ -205,7 +260,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                int xx = x + p.first;
                int yy = y + p.second;
 
-               if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy < EIGHTH_RANK))
+               if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                {
                     if ((piece == WHITE_KNIGHT) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
                     if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
@@ -661,7 +716,7 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     }
 
     // If this move is a first move of a pawn, update "can_enpassant_file"
-    if (((start_piece == WHITE_PAWN) && (y1 == SECOND_RANK) && (y2 == THIRD_RANK)) ||
+    if (((start_piece == WHITE_PAWN) && (y1 == SECOND_RANK) && (y2 == FOURTH_RANK)) ||
         ((start_piece == BLACK_PAWN) && (y1 == SEVENTH_RANK) && (y2 == FIFTH_RANK)))
     {
         board.m_can_en_passant_file = x1;
@@ -835,7 +890,7 @@ static double sum_bits_and_multiply(uint64_t bb, double multiplier)
 
 static double multiply_bits_with_weights(uint64_t bb, const double* weights)
 {
-    int sum = 0;
+    double sum = 0;
     for (int i = 0; i < 64; i ++)
         if (bb & (1ULL << i))
             sum += weights[i];
@@ -844,7 +899,7 @@ static double multiply_bits_with_weights(uint64_t bb, const double* weights)
 
 static double multiply_bits_with_weights_reverse(uint64_t bb, const double* weights)
 {
-    int sum = 0;
+    double sum = 0;
     for (int x = 0; x < 8; x ++)
         for (int y = 0; y < 8; y++)
             if (bb & (1ULL << (x + y*8)))
@@ -852,7 +907,13 @@ static double multiply_bits_with_weights_reverse(uint64_t bb, const double* weig
     return sum;
 }
 
-
+static int sum_bits(uint64_t bb)
+{
+    int sum = 0;
+    for (int i = 0; i < 64; i++)
+        if (bb & (1ULL << i)) sum++;
+    return sum;
+}
 
 void Chess::evalBoard(const ChessBoard& board, double& white_score, double& black_score)
 {
@@ -867,7 +928,6 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
     white_score += sum_bits_and_multiply(board.whiteRooksBoard, 5.0);
     white_score += sum_bits_and_multiply(board.whiteQueensBoard, 9.0);
 
-    white_score += multiply_bits_with_weights(board.whitePawnsBoard, whitePawnPositionWeights);
 
     black_score += sum_bits_and_multiply(board.blackPawnsBoard, 1.0);
     black_score += sum_bits_and_multiply(board.blackKnightsBoard, 3.0);
@@ -875,30 +935,47 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
     black_score += sum_bits_and_multiply(board.blackRooksBoard, 5.0);
     black_score += sum_bits_and_multiply(board.blackQueensBoard, 9.0);
 
-    black_score += multiply_bits_with_weights_reverse(board.blackPawnsBoard, whitePawnPositionWeights);
+    // Compute positional heuristics
 
-    // Compute position
+    white_score += 0.01*multiply_bits_with_weights_reverse(board.whitePawnsBoard,   pawnPositionWeights);
+    white_score += 0.01*multiply_bits_with_weights_reverse(board.whiteKnightsBoard, knightPositionWeights);
+    white_score += 0.01*multiply_bits_with_weights_reverse(board.whiteBishopsBoard, bishopsPositionWeights);
+    white_score += 0.01*multiply_bits_with_weights_reverse(board.whiteRooksBoard,   rooksPositionWeights);
+    white_score += 0.01*multiply_bits_with_weights_reverse(board.whiteQueensBoard,   queenPositionWeights);
+    white_score += 0.01*multiply_bits_with_weights_reverse(board.whiteKingsBoard,   kingPositionWeights);
 
+    black_score += 0.01*multiply_bits_with_weights(board.blackPawnsBoard, pawnPositionWeights);
+    black_score += 0.01*multiply_bits_with_weights(board.blackKnightsBoard, knightPositionWeights);
+    black_score += 0.01*multiply_bits_with_weights(board.blackBishopsBoard, bishopsPositionWeights);
+    black_score += 0.01*multiply_bits_with_weights(board.blackRooksBoard, rooksPositionWeights);
+    black_score += 0.01*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
+    black_score += 0.01*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
+
+    uint64_t movesWhite = movesForPlayer(board, true);  
+    uint64_t movesBlack = movesForPlayer(board, false);
+   
+    white_score += 0.01*sum_bits(movesWhite);
+    black_score += 0.01*sum_bits(movesBlack);
 
     // Compute checkmate
 
-    if (kingIsInCheck(board, true) && (movesForPlayer(board, true) == 0))
+    if (kingIsInCheck(board, true) && (movesWhite == 0))
     {
         black_score += 10000.0;
+        white_score -= 10000.0;
     }
 
-    if (kingIsInCheck(board, false) && (movesForPlayer(board, false) == 0))
+    if (kingIsInCheck(board, false) && (movesBlack == 0))
     {
         white_score += 10000.0;
+        black_score -= 10000.0;
     }
 
 }
 
-void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
+void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec)
 {
-    uint64_t bb = (m_board.m_isWhitesTurn) ? m_board.allWhitePieces() : m_board.allBlackPieces();
-
-    double my_score = -10000.0;
+    uint64_t bb = (board.m_isWhitesTurn) ? board.allWhitePieces() : board.allBlackPieces();
 
     for (int x = 0; x < 8; x++)
     {
@@ -909,7 +986,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
             if (bb & sq) 
             {
                 uint64_t temp = 0;
-                getLegalMovesForBoardSquare(m_board, x, y, temp);
+                getLegalMovesForBoardSquare(board, x, y, temp);
             
                 for (int xx = 0; xx < 8; xx++)
                 {
@@ -920,47 +997,179 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
            
                         if (temp & COORD_TO_BIT(xx, yy))
                         {
-
-                            ChessBoard clone = m_board;
-                            bool ep;
-                            bool castle_kings_side;
-                            bool castle_queens_side;
-
-                            makeMoveForBoard(clone, x, y, xx, yy, ep, castle_kings_side, castle_queens_side, false);
-                       
-                            double w = 0.0;
-                            double b = 0.0;
-
-                            evalBoard(clone, w, b);
-
-                            if (m_board.m_isWhitesTurn)
-                            {
-                                if ((w - b) > my_score)
-                                {
-                                    my_score = w - b;
-                                    x1 = x;
-                                    x2 = xx;
-                                    y1 = y;
-                                    y2 = yy;
-                                }
-                            }
-                            else
-                            {
-                                if ((b - w) > my_score)
-                                {
-                                    my_score = b - w;
-                                    x1 = x;
-                                    x2 = xx;
-                                    y1 = y;
-                                    y2 = yy;
-                                }
-
-                            }
-                        }
-                    }
+                            vec.emplace_back(x, y, xx, yy);
+                        } 
+                   }
                 }
             }
         }
     }
+}
+
+double Chess::minimax(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos)
+{
+
+    std::vector<ChessMove> vec;
+
+    getLegalMovesForBoardAsVector(board, vec);
+
+    if (depth == 0 || vec.size() == 0)
+    {
+        double whiteScore, blackScore;
+        evalBoard(board, whiteScore, blackScore); 
+
+        npos++;
+
+        if (board.m_isWhitesTurn)
+        {
+            return whiteScore - blackScore;
+        }
+        else
+        {
+            return blackScore - whiteScore; 
+        }
+    }
+
+    if (maximizing)
+    {
+        double score = -INFINITY;
+
+        for (const auto & m : vec)
+        {
+            ChessBoard b = board;
+            bool ep, castle_kings_side, castle_queens_side;
+            ChessMove mm;
+
+            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
+
+            double newscore = minimax(b, mm, false, depth - 1, npos); 
+            if (newscore > score)
+            {
+                score = newscore;
+                move = m;
+            }
+        }
+        return score;
+    }
+    else
+    {
+        double score = INFINITY;
+
+        for (const auto & m : vec)
+        {
+            ChessBoard b = board;
+            bool ep, castle_kings_side, castle_queens_side;
+            ChessMove mm;
+
+            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
+
+            double newscore = minimax(b, mm, true, depth - 1, npos); 
+            if (newscore < score)
+            {
+                score = newscore;
+                move = m;
+            }
+
+        }
+        return score;
+    }
+
+    return 0.0;
+}
+
+double Chess::minimaxAlphaBeta(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
+{
+
+    std::vector<ChessMove> vec;
+
+    getLegalMovesForBoardAsVector(board, vec);
+
+    if (depth == 0 || vec.size() == 0)
+    {
+        double whiteScore, blackScore;
+        evalBoard(board, whiteScore, blackScore); 
+
+        npos++;
+
+        if (board.m_isWhitesTurn)
+        {
+            return whiteScore - blackScore;
+        }
+        else
+        {
+            return blackScore - whiteScore; 
+        }
+    }
+
+    if (maximizing)
+    {
+        double score = -INFINITY;
+
+        for (const auto & m : vec)
+        {
+            ChessBoard b = board;
+            bool ep, castle_kings_side, castle_queens_side;
+            ChessMove mm;
+
+            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
+
+            double newscore = minimaxAlphaBeta(b, mm, false, depth - 1, npos, alpha, beta); 
+            if (newscore > score)
+            {
+                score = newscore;
+                move = m;
+            }
+            alpha = std::max(alpha, newscore);
+            if (newscore >= beta)
+                break;
+        }
+        return score;
+    }
+    else
+    {
+        double score = INFINITY;
+        for (const auto & m : vec)
+        {
+            ChessBoard b = board;
+            bool ep, castle_kings_side, castle_queens_side;
+            ChessMove mm;
+
+            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
+
+            double newscore = minimaxAlphaBeta(b, mm, true, depth - 1, npos, alpha, beta); 
+            if (newscore < score)
+            {
+                score = newscore;
+                move = m;
+            }
+            beta = std::min(beta, newscore);
+            if (newscore <= alpha)
+                break;
+        }
+        return score;
+    }
+
+    return 0.0;
+}
+
+
+
+void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
+{
+
+    ChessMove m;
+
+    int npos = 0;
+
+//    minimax(m_board, m, true, 2, npos);
+    minimaxAlphaBeta(m_board, m, true, 4, npos, -INFINITY, INFINITY);
+
+    printf("Number of positions: %d\n", npos);
+    printf("Best move is: %d,%d->%d,%d\n", m.x1, m.y1, m.x2, m.y2);
+
+    x1 = m.x1;
+    x2 = m.x2;
+    y1 = m.y1;
+    y2 = m.y2;
 
 }

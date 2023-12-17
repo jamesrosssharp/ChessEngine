@@ -48,7 +48,7 @@ UI::UI(Renderer* r, Chess* ch)    :
 
 void UI::handleLeftKeyDown()
 {
-    if (m_renderer->animating() || m_locked) return;
+    if (m_renderer->animating()) return;
     if (m_renderer->animating()) return;
 
     if (m_highlighted_x > 0)
@@ -58,7 +58,7 @@ void UI::handleLeftKeyDown()
 
 void UI::handleRightKeyDown()
 {
-    if (m_renderer->animating() || m_locked) return;
+    if (m_renderer->animating()) return;
     if (m_renderer->animating()) return;
     if (m_highlighted_x < 7)
         m_highlighted_x ++;
@@ -67,7 +67,7 @@ void UI::handleRightKeyDown()
 
 void UI::handleUpKeyDown()
 {
-    if (m_renderer->animating() || m_locked) return;
+    if (m_renderer->animating()) return;
     if (m_highlighted_y < 7)
         m_highlighted_y ++;
     m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
@@ -75,7 +75,7 @@ void UI::handleUpKeyDown()
 
 void UI::handleDownKeyDown()
 {
-    if (m_renderer->animating() || m_locked) return;
+    if (m_renderer->animating()) return;
     if (m_highlighted_y > 0)
         m_highlighted_y --;
     m_renderer->setHighlightedSquare(m_highlighted_x, m_highlighted_y);
