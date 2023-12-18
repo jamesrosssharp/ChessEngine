@@ -80,7 +80,7 @@ enum Ranks {
 };
 
 #define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
-
+#define IS_IN_BOARD(file, rank) ((file >= A_FILE) && (file <= H_FILE) && (rank >= FIRST_RANK) && (rank <= EIGHTH_RANK))
 
 struct ChessBoard {
 
@@ -184,6 +184,7 @@ class Chess {
 
         void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
+        bool kingIsInCheckSlow(const ChessBoard& board, bool white);
         bool kingIsInCheck(const ChessBoard& board, bool white);
         uint64_t movesForPlayer(const ChessBoard& board, bool white); 
 
