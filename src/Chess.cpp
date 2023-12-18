@@ -34,6 +34,7 @@ SOFTWARE.
 #include <cstdio>
 //#include <iostream>
 #include <vector>
+#include <chrono>
 
 const std::vector<std::pair<int, int>> knightMoves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 const std::vector<std::pair<int, int>> pawnCaptures = {{-1, 1}, {1, 1}};
@@ -161,14 +162,10 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
 
     enum PieceTypes piece = getPieceForSquare(board, x, y);
 
-    //std::cout << "Computing moves for " << prettyPiece(piece) << std::endl;
-
     // Check if it's this colors move
 
     if (!allowTakeKing && board.m_isWhitesTurn && !(piece & WHITE_PIECES)) return;
     if (!allowTakeKing && !board.m_isWhitesTurn && !(piece & BLACK_PIECES)) return;
-
-    // TODO: Check for check! - cannot allow move if it results in check (or doesn't prevent an existing check)
 
     // Compute legal moves for this piece
 
@@ -1013,7 +1010,7 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
 
     if ((depth == 0) || (vec.size() == 0))
     {
-        double whiteScore, blackScore;
+        double whiteScore = 0.0, blackScore = 0.0;
         evalBoard(board, whiteScore, blackScore); 
 
         npos++;
@@ -1088,9 +1085,13 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     int npos = 0;
 
+    static std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
+ 
     double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 4, npos, -INFINITY, INFINITY);
 
-    printf("Number of positions: %d\n", npos);
+    auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+    
+    printf("Number of positions: %d (%ld usecs)\n", npos, msecs.count());
     printf("Max score: %f\n", maxScore);
     printf("Best move is: %d,%d->%d,%d\n", m.x1, m.y1, m.x2, m.y2);
 
