@@ -854,7 +854,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             for (const auto& p : pawnCaptures)
             {
                 int xx = x + p.first;
-                int yy = y + p.second;
+                int yy = y - p.second;
                 if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.whiteKingsBoard)) return true; 
             }
 
@@ -875,7 +875,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             for (const auto& p : pawnCaptures)
             {
                 int xx = x + p.first;
-                int yy = y - p.second;
+                int yy = y + p.second;
                 if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.blackKingsBoard)) return true; 
             }
 
