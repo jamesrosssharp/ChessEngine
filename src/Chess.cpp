@@ -259,8 +259,8 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
 
                if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                {
-                    if ((piece == WHITE_KNIGHT) && (COORD_TO_BIT(xx, yy) & board.allWhitePieces())) break;
-                    if ((piece == BLACK_KNIGHT) && (COORD_TO_BIT(xx, yy) & board.allBlackPieces())) break;
+                    if ((piece == WHITE_KNIGHT) && (COORD_TO_BIT(xx, yy) & board.allWhitePieces())) continue;
+                    if ((piece == BLACK_KNIGHT) && (COORD_TO_BIT(xx, yy) & board.allBlackPieces())) continue;
 
                     // Can never take the king
                     if (!allowTakeKing)
@@ -855,7 +855,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             {
                 int xx = x + p.first;
                 int yy = y + p.second;
-                if (COORD_TO_BIT(xx, yy) & board.whiteKingsBoard) return true; 
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.whiteKingsBoard)) return true; 
             }
 
             bb &= ~(1ULL << idx);
@@ -876,7 +876,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             {
                 int xx = x + p.first;
                 int yy = y - p.second;
-                if (IS_IN_BOARD(xx, yy) && COORD_TO_BIT(xx, yy) & board.blackKingsBoard) return true; 
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.blackKingsBoard)) return true; 
             }
 
             bb &= ~(1ULL << idx);
@@ -900,7 +900,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             {
                 int xx = x + p.first;
                 int yy = y + p.second;
-                if (IS_IN_BOARD(xx, yy) && COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard)) return true; 
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
             }
 
             bb &= ~(1ULL << idx);
@@ -927,7 +927,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 {    
                     int xx = x + multiplier*p.first;
                     int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard)) return true; 
+                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
                     if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
                 }
             }
@@ -956,7 +956,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 {    
                     int xx = x + multiplier*p.first;
                     int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard)) return true; 
+                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
                     if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
                 }
             }
@@ -985,7 +985,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 {    
                     int xx = x + multiplier*p.first;
                     int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard)) return true; 
+                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
                     if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
                 }
             }
