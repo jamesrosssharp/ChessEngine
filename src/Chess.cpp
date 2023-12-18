@@ -961,14 +961,14 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
 
     if (kingIsInCheck(board, true) && (movesWhite == 0))
     {
-        black_score += 10000.0;
-        white_score -= 10000.0;
+        printf("Black will check mate!\n");
+        black_score += 900.0;
     }
 
     if (kingIsInCheck(board, false) && (movesBlack == 0))
     {
-        white_score += 10000.0;
-        black_score -= 10000.0;
+        printf("White will check mate!\n");
+        white_score += 900.0;
     }
 
 }
@@ -1006,21 +1006,21 @@ void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<C
     }
 }
 
-double Chess::minimax(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos)
+double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
 {
 
     std::vector<ChessMove> vec;
 
     getLegalMovesForBoardAsVector(board, vec);
 
-    if (depth == 0 || vec.size() == 0)
+    if ((depth == 0) || (vec.size() == 0))
     {
         double whiteScore, blackScore;
         evalBoard(board, whiteScore, blackScore); 
 
         npos++;
 
-        if (board.m_isWhitesTurn)
+        if (white)
         {
             return whiteScore - blackScore;
         }
@@ -1042,78 +1042,7 @@ double Chess::minimax(const ChessBoard& board, ChessMove& move, bool maximizing,
 
             makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
 
-            double newscore = minimax(b, mm, false, depth - 1, npos); 
-            if (newscore > score)
-            {
-                score = newscore;
-                move = m;
-            }
-        }
-        return score;
-    }
-    else
-    {
-        double score = INFINITY;
-
-        for (const auto & m : vec)
-        {
-            ChessBoard b = board;
-            bool ep, castle_kings_side, castle_queens_side;
-            ChessMove mm;
-
-            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
-
-            double newscore = minimax(b, mm, true, depth - 1, npos); 
-            if (newscore < score)
-            {
-                score = newscore;
-                move = m;
-            }
-
-        }
-        return score;
-    }
-
-    return 0.0;
-}
-
-double Chess::minimaxAlphaBeta(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
-{
-
-    std::vector<ChessMove> vec;
-
-    getLegalMovesForBoardAsVector(board, vec);
-
-    if (depth == 0 || vec.size() == 0)
-    {
-        double whiteScore, blackScore;
-        evalBoard(board, whiteScore, blackScore); 
-
-        npos++;
-
-        if (board.m_isWhitesTurn)
-        {
-            return whiteScore - blackScore;
-        }
-        else
-        {
-            return blackScore - whiteScore; 
-        }
-    }
-
-    if (maximizing)
-    {
-        double score = -INFINITY;
-
-        for (const auto & m : vec)
-        {
-            ChessBoard b = board;
-            bool ep, castle_kings_side, castle_queens_side;
-            ChessMove mm;
-
-            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
-
-            double newscore = minimaxAlphaBeta(b, mm, false, depth - 1, npos, alpha, beta); 
+            double newscore = minimaxAlphaBeta(b, white, mm, false, depth - 1, npos, alpha, beta); 
             if (newscore > score)
             {
                 score = newscore;
@@ -1136,7 +1065,7 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, ChessMove& move, bool ma
 
             makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
 
-            double newscore = minimaxAlphaBeta(b, mm, true, depth - 1, npos, alpha, beta); 
+            double newscore = minimaxAlphaBeta(b, white, mm, true, depth - 1, npos, alpha, beta); 
             if (newscore < score)
             {
                 score = newscore;
@@ -1161,10 +1090,10 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     int npos = 0;
 
-//    minimax(m_board, m, true, 2, npos);
-    minimaxAlphaBeta(m_board, m, true, 4, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 4, npos, -INFINITY, INFINITY);
 
     printf("Number of positions: %d\n", npos);
+    printf("Max score: %f\n", maxScore);
     printf("Best move is: %d,%d->%d,%d\n", m.x1, m.y1, m.x2, m.y2);
 
     x1 = m.x1;

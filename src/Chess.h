@@ -179,8 +179,7 @@ class Chess {
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
 
-        double minimax(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos);
-        double minimaxAlphaBeta(const ChessBoard& board, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
+        double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
 
 
         void printBitBoard(uint64_t board);
