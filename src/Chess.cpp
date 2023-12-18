@@ -961,13 +961,11 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
 
     if (kingIsInCheck(board, true) && (movesWhite == 0))
     {
-        printf("Black will check mate!\n");
         black_score += 900.0;
     }
 
     if (kingIsInCheck(board, false) && (movesBlack == 0))
     {
-        printf("White will check mate!\n");
         white_score += 900.0;
     }
 
