@@ -111,7 +111,11 @@ const double kingPositionWeights[64] = {
 
 #define INFINITY 1e10
 
-Chess::Chess()  
+Chess::Chess()  :
+    m_totalCheckTestMicroseconds(0),
+    m_totalGenerateMoveMicroseconds(0),
+    m_totalEvaluateMicroseconds(0),
+    m_totalGenLegalMicroseconds(0)
 {
     resetBoard();
     printBoard(m_board);
@@ -147,12 +151,12 @@ void Chess::resetBoard()
     m_board.m_blackHRookHasMoved = false;
 }
 
-void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares, bool allowTakeKing)
+void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares)
 {
-    getLegalMovesForBoardSquare(m_board, x, y, moveSquares, allowTakeKing);
+    getLegalMovesForBoardSquare(m_board, x, y, moveSquares);
 }
 
-void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t &moveSquares, bool allowTakeKing)
+void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t &moveSquares)
 {
     // Init: zero out legal moves
 
@@ -164,8 +168,8 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
 
     // Check if it's this colors move
 
-    if (!allowTakeKing && board.m_isWhitesTurn && !(piece & WHITE_PIECES)) return;
-    if (!allowTakeKing && !board.m_isWhitesTurn && !(piece & BLACK_PIECES)) return;
+    if (board.m_isWhitesTurn && !(piece & WHITE_PIECES)) return;
+    if (!board.m_isWhitesTurn && !(piece & BLACK_PIECES)) return;
 
     // Compute legal moves for this piece
 
@@ -195,7 +199,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                 if ((piece == BLACK_PAWN) && (i == 2) && (y != SEVENTH_RANK)) break;
 
                 // Cannot make move if it puts the player in check
-                if (!allowTakeKing && movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
+                if (movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
 
                 // If not, we can move here.
 
@@ -214,15 +218,12 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                 if ((piece == WHITE_PAWN) && !(getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
                 if ((piece == BLACK_PAWN) && !(getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
 
-                if (!allowTakeKing)
-                {
                     // Can never take the king
-                    if ((piece == WHITE_PAWN) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
-                    if ((piece == BLACK_PAWN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
-                }
+                if ((piece == WHITE_PAWN) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
+                if ((piece == BLACK_PAWN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
 
                 // Cannot make move if it puts the player in check
-                if (!allowTakeKing && movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
+                if (movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
 
                 moveSquares |= COORD_TO_BIT(xx, yy);
             }
@@ -241,7 +242,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                         ((piece == BLACK_PAWN) && (board.m_can_en_passant_file == xx) && (getPieceForSquare(board, xx, yy - multiplier) & WHITE_PIECES)) )) continue;
 
                 // Cannot make move if it puts the player in check
-                if (!allowTakeKing && movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
+                if (movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
 
                 moveSquares |= COORD_TO_BIT(xx, yy); 
             }
@@ -263,14 +264,11 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     if ((piece == BLACK_KNIGHT) && (COORD_TO_BIT(xx, yy) & board.allBlackPieces())) continue;
 
                     // Can never take the king
-                    if (!allowTakeKing)
-                    {
-                        if ((piece == WHITE_KNIGHT) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
-                        if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
-                    }
+                    if ((piece == WHITE_KNIGHT) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
+                    if ((piece == BLACK_KNIGHT) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
 
                     // Cannot make move if it puts the player in check
-                    if (!allowTakeKing && movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
+                    if (movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
 
                     moveSquares |= COORD_TO_BIT(xx, yy); 
                }
@@ -293,14 +291,11 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                         if ((piece == WHITE_BISHOP) && (COORD_TO_BIT(xx, yy) & board.allWhitePieces())) break;
                         if ((piece == BLACK_BISHOP) && (COORD_TO_BIT(xx, yy) & board.allBlackPieces())) break;
                      
-                        if (!allowTakeKing)
-                        {
-                            if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
-                            if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
-                        }
+                        if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
+                        if ((piece == BLACK_BISHOP) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
 
                         // Cannot make move if it puts the player in check
-                        if (allowTakeKing ||  !movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) 
+                        if (!movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) 
                             moveSquares |= COORD_TO_BIT(xx, yy); 
                   
                         if ((piece == WHITE_BISHOP) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
@@ -322,20 +317,19 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                    int xx = x + p.first * k;
                    int yy = y + p.second * k;
 
+                   uint64_t sq = COORD_TO_BIT(xx, yy); 
+
                    if ((xx >= A_FILE) && (xx <= H_FILE) && (yy >= FIRST_RANK) && (yy <= EIGHTH_RANK))
                    {
-                        if ((piece == WHITE_ROOK) && (COORD_TO_BIT(xx, yy) & board.allWhitePieces())) break;
-                        if ((piece == BLACK_ROOK) && (COORD_TO_BIT(xx, yy) & board.allBlackPieces())) break;
+                        if ((piece == WHITE_ROOK) && (sq & board.allWhitePieces())) break;
+                        if ((piece == BLACK_ROOK) && (sq & board.allBlackPieces())) break;
                      
-                        if (!allowTakeKing)
-                        {
-                            if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
-                            if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
-                        }
+                        if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
+                        if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
 
                         // Cannot make move if it puts the player in check
-                        if (allowTakeKing || !movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) 
-                            moveSquares |= COORD_TO_BIT(xx, yy); 
+                        if (!movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) 
+                            moveSquares |= sq; 
                   
                         if ((piece == WHITE_ROOK) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
                         if ((piece == BLACK_ROOK) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) break;
@@ -361,14 +355,11 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                         if ((piece == WHITE_QUEEN) && (COORD_TO_BIT(xx, yy) & board.allWhitePieces())) break;
                         if ((piece == BLACK_QUEEN) && (COORD_TO_BIT(xx, yy) & board.allBlackPieces())) break;
                                     
-                        if (!allowTakeKing)
-                        {
-                            if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
-                            if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
-                        }
+                        if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) break;
+                        if ((piece == BLACK_QUEEN) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) break;
 
                         // Cannot make move if it puts the player in check
-                        if (allowTakeKing || !movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES))
+                        if (!movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES))
                             moveSquares |= COORD_TO_BIT(xx, yy); 
                   
                         if ((piece == WHITE_QUEEN) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) break;
@@ -393,14 +384,11 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) & WHITE_PIECES)) continue;
                     if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) & BLACK_PIECES)) continue;
 
-                    if (!allowTakeKing)
-                    {
-                        if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
-                        if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
-                    }
+                    if ((piece == WHITE_KING) && (getPieceForSquare(board, xx, yy) == BLACK_KING)) continue;
+                    if ((piece == BLACK_KING) && (getPieceForSquare(board, xx, yy) == WHITE_KING)) continue;
 
                     // Cannot make move if it puts the player in check
-                    if (!allowTakeKing && movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
+                    if (movePutsPlayerInCheck(board, x, y, xx, yy, piece & WHITE_PIECES)) continue; 
 
                     moveSquares |= COORD_TO_BIT(xx, yy);
               
@@ -410,7 +398,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
 
             // Check for castling moves
 
-            if ((piece == WHITE_KING) && (!board.m_whiteKingHasMoved))
+            if ((piece == WHITE_KING) && (!board.m_whiteKingHasMoved) && !kingIsInCheck(board, true))
             {
 
                 // Check King side castling
@@ -418,7 +406,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
                     !board.m_whiteHRookHasMoved)
                 {
-                    if ((moveSquares & COORD_TO_BIT(F_FILE, FIRST_RANK)) && (allowTakeKing || !(movePutsPlayerInCheck(board, x, y, G_FILE, FIRST_RANK, true))))
+                    if ((moveSquares & COORD_TO_BIT(F_FILE, FIRST_RANK)) && (!(movePutsPlayerInCheck(board, x, y, G_FILE, FIRST_RANK, true))))
                         moveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
                 }
 
@@ -428,13 +416,13 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
                     !board.m_whiteARookHasMoved)
                 {
-                    if ((moveSquares & COORD_TO_BIT(D_FILE, FIRST_RANK)) && (allowTakeKing || !(movePutsPlayerInCheck(board, x, y, C_FILE, FIRST_RANK, true))))
+                    if ((moveSquares & COORD_TO_BIT(D_FILE, FIRST_RANK)) && (!(movePutsPlayerInCheck(board, x, y, C_FILE, FIRST_RANK, true))))
                         moveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
                 }
 
             }
 
-            if ((piece == BLACK_KING) && (!board.m_blackKingHasMoved))
+            if ((piece == BLACK_KING) && (!board.m_blackKingHasMoved) && !kingIsInCheck(board, false))
             {
 
                 // Check King side castling
@@ -442,7 +430,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
                     !board.m_blackHRookHasMoved)
                 {
-                    if ((moveSquares & COORD_TO_BIT(F_FILE, EIGHTH_RANK)) && (allowTakeKing || !(movePutsPlayerInCheck(board, x, y, G_FILE, EIGHTH_RANK, false))))
+                    if ((moveSquares & COORD_TO_BIT(F_FILE, EIGHTH_RANK)) && (!(movePutsPlayerInCheck(board, x, y, G_FILE, EIGHTH_RANK, false))))
                         moveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
                 }
 
@@ -452,7 +440,7 @@ void Chess::getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, u
                     (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
                     !board.m_blackARookHasMoved)
                 {
-                    if ((moveSquares & COORD_TO_BIT(D_FILE, EIGHTH_RANK)) && (allowTakeKing || !(movePutsPlayerInCheck(board, x, y, C_FILE, EIGHTH_RANK, false))))
+                    if ((moveSquares & COORD_TO_BIT(D_FILE, EIGHTH_RANK)) && (!(movePutsPlayerInCheck(board, x, y, C_FILE, EIGHTH_RANK, false))))
                         moveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
                 }
 
@@ -792,16 +780,22 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     // Compute legal moves for board
     if (recompute_legal)
     {
+        std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
+            
         board.m_legalMoves.clear();
         getLegalMovesForBoardAsVector(board, board.m_legalMoves);
-    }
+
+        auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+        m_totalGenLegalMicroseconds += usecs.count();
+
+   }
 
     if (print)
     {
         printBoard(board);
         if (kingIsInCheck(board, board.m_isWhitesTurn))
         {
-            if (movesForPlayer(board, !board.m_isWhitesTurn) == 0)
+            if (movesForPlayer(board, board.m_isWhitesTurn) == 0)
                 printf("Checkmate!\n");
             else
                 printf("Check!\n");
@@ -816,36 +810,10 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
 
 }
 
-bool Chess::kingIsInCheckSlow(const ChessBoard& board, bool white)
-{
-    uint64_t legalMoves = 0;
-
-    for (int x = 0; x < 8; x++)
-    {
-        for (int y = 0; y < 8; y++)
-        {
-            uint64_t temp = 0;
-            enum PieceTypes type = getPieceForSquare(board, x, y);
-            if ((!white && (type & WHITE_PIECES)) ||
-                (white && (type & BLACK_PIECES)))
-            {
-                    getLegalMovesForBoardSquare(board, x, y, temp, true);
-                    legalMoves |= temp;
-            }
-        }
-    }
-
-    // We could and should exit early here, but for now, we won't as we want to debug easier...
-    //printBitBoard(legalMoves);
-    if (white && (board.whiteKingsBoard & legalMoves)) return true;
-    if (!white && (board.blackKingsBoard & legalMoves)) return true;
-
-    return false;
-}
-
 bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 {
-
+    std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
+   
     // Check for check from pawns
 
     if (white)
@@ -863,7 +831,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             {
                 int xx = x + p.first;
                 int yy = y - p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.whiteKingsBoard)) return true; 
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.whiteKingsBoard)) goto check; 
             }
 
             bb &= ~(1ULL << idx);
@@ -884,7 +852,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             {
                 int xx = x + p.first;
                 int yy = y + p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.blackKingsBoard)) return true; 
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.blackKingsBoard)) goto check; 
             }
 
             bb &= ~(1ULL << idx);
@@ -908,7 +876,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
             {
                 int xx = x + p.first;
                 int yy = y + p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
             }
 
             bb &= ~(1ULL << idx);
@@ -935,7 +903,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 {    
                     int xx = x + multiplier*p.first;
                     int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
+                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
                     if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
                 }
             }
@@ -964,7 +932,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 {    
                     int xx = x + multiplier*p.first;
                     int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
+                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
                     if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
                 }
             }
@@ -993,7 +961,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
                 {    
                     int xx = x + multiplier*p.first;
                     int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) return true; 
+                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
                     if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
                 }
             }
@@ -1003,9 +971,41 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
     }
 
-    // TODO: Check for possible check from Kings... so that Kings can't get near each other
+    // Check for possible check from Kings... so that Kings can't get near each other
 
+    {
+        uint64_t bb = white ? board.blackKingsBoard : board.whiteKingsBoard;
+
+        while(bb)
+        {
+            int idx = 63 - __builtin_clzl(bb);
+
+            int x = idx & 7;
+            int y = idx >> 3;
+
+            for (const auto& p : kingMoves)
+            {
+                int xx = x + p.first;
+                int yy = y + p.second;
+                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
+            }
+
+            bb &= ~(1ULL << idx);
+        }
+
+    }
+   
+    {
+        auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+        m_totalCheckTestMicroseconds += usecs.count();
+    }
     return false;
+check:
+    { 
+        auto usecs2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+        m_totalCheckTestMicroseconds += usecs2.count();
+    }
+    return true;
 }
 
 bool Chess::movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white)
@@ -1056,7 +1056,7 @@ static double sum_bits_and_multiply(uint64_t bb, double multiplier)
     //    if (bb & (1ULL << i))
     //        sum++;
     
-    if (!(bb & (bb - 1))) return multiplier;    // Power of two: 1 bit
+    if (bb && !(bb & (bb - 1))) return multiplier;    // Power of two: 1 bit
     
     while (bb) {
        sum++;
@@ -1156,7 +1156,7 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
 
 }
 
-void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec)
+void Chess::getLegalMovesForBoardAsVectorSlow(const ChessBoard& board, std::vector<ChessMove>& vec)
 {
     uint64_t bb = (board.m_isWhitesTurn) ? board.allWhitePieces() : board.allBlackPieces();
 
@@ -1189,6 +1189,37 @@ void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<C
     }
 }
 
+void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec)
+{
+    uint64_t bb = (board.m_isWhitesTurn) ? board.allWhitePieces() : board.allBlackPieces();
+
+    while (bb)
+    {
+        int idx = 63 - __builtin_clzl(bb);
+        int x = idx & 7;
+        int y = idx >> 3;
+
+        uint64_t temp = 0;
+        getLegalMovesForBoardSquare(board, x, y, temp);
+        
+        while (temp)
+        {
+            int idx2 = 63 - __builtin_clzl(temp);
+            int xx = idx2 & 7;
+            int yy = idx2 >> 3;
+
+            vec.emplace_back(x, y, xx, yy);
+
+            temp &= ~(1ULL << idx2); 
+        }
+
+        bb &= ~(1ULL << idx);
+    }
+
+}
+
+
+
 double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
 {
 
@@ -1197,7 +1228,12 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
     if ((depth == 0) || (board.m_legalMoves.size() == 0))
     {
         double whiteScore = 0.0, blackScore = 0.0;
-        evalBoard(board, whiteScore, blackScore); 
+     
+        std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
+            evalBoard(board, whiteScore, blackScore); 
+        auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+        m_totalEvaluateMicroseconds += usecs.count();
+
 
         if (white)
         {
@@ -1218,8 +1254,12 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
             ChessBoard b = board;
             bool ep, castle_kings_side, castle_queens_side;
             ChessMove mm;
-
+            std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
+            
             makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false, true);
+
+            auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+            m_totalGenerateMoveMicroseconds += usecs.count();
 
             double newscore = minimaxAlphaBeta(b, white, mm, false, depth - 1, npos, alpha, beta); 
             if (newscore > score)
@@ -1242,7 +1282,12 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
             bool ep, castle_kings_side, castle_queens_side;
             ChessMove mm;
 
+            std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
+            
             makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false, true);
+            
+            auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+            m_totalGenerateMoveMicroseconds += usecs.count();
 
             double newscore = minimaxAlphaBeta(b, white, mm, true, depth - 1, npos, alpha, beta); 
             if (newscore < score)
@@ -1271,11 +1316,20 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
-    double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 6, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 5, npos, -INFINITY, INFINITY);
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     
     printf("Number of positions: %d (%1.3f secs) = %1.3f KNps\n", npos, msecs.count() / 1'000'000.0, npos / 1000.0 / (msecs.count() / 1'000'000.0));
+    printf("check test: %1.3f eval: %1.3f gen: %1.3f gen2: %1.3f \n", m_totalCheckTestMicroseconds / 1'000'000.0, 
+                m_totalEvaluateMicroseconds / 1'000'000.0, m_totalGenerateMoveMicroseconds / 1'000'000.0, 
+                m_totalGenLegalMicroseconds / 1'000'000.0); 
+
+    m_totalCheckTestMicroseconds    = 0;
+    m_totalGenerateMoveMicroseconds = 0;
+    m_totalEvaluateMicroseconds     = 0;
+    m_totalGenLegalMicroseconds     = 0;
+
     printf("Max score: %f\n", maxScore);
     printf("Best move is: %d,%d->%d,%d\n", m.x1, m.y1, m.x2, m.y2);
 

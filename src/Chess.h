@@ -166,8 +166,8 @@ class Chess {
 
         void resetBoard();
 
-        void getLegalMovesForSquare(int x, int y, uint64_t& moveSquares, bool allowTakeKing = false);
-        void getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t& moveSquares, bool allowTakeKing = false);
+        void getLegalMovesForSquare(int x, int y, uint64_t& moveSquares);
+        void getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t& moveSquares);
         void printBoard(const ChessBoard& board);
 
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
@@ -176,6 +176,7 @@ class Chess {
         void getBestMove(int& x1, int& y1, int& x2, int& y2); 
 
         void getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec);
+        void getLegalMovesForBoardAsVectorSlow(const ChessBoard& board, std::vector<ChessMove>& vec);
 
     private:
 
@@ -186,7 +187,7 @@ class Chess {
 
         void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
-        bool kingIsInCheckSlow(const ChessBoard& board, bool white);
+        
         bool kingIsInCheck(const ChessBoard& board, bool white);
         uint64_t movesForPlayer(const ChessBoard& board, bool white); 
 
@@ -196,5 +197,10 @@ class Chess {
         void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
         ChessBoard m_board;
- 
+
+        std::uint64_t m_totalCheckTestMicroseconds;
+        std::uint64_t m_totalGenerateMoveMicroseconds;
+        std::uint64_t m_totalEvaluateMicroseconds;
+        std::uint64_t m_totalGenLegalMicroseconds;
+
 };
