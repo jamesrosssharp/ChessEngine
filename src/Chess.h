@@ -82,6 +82,30 @@ enum Ranks {
 #define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
 #define IS_IN_BOARD(file, rank) ((file >= A_FILE) && (file <= H_FILE) && (rank >= FIRST_RANK) && (rank <= EIGHTH_RANK))
 
+struct ChessMove {
+
+    ChessMove() :
+        x1(INVALID_FILE),
+        y1(INVALID_RANK),
+        x2(INVALID_FILE),
+        y2(INVALID_RANK)
+    {
+
+    }
+
+    ChessMove(int _x1, int _y1, int _x2, int _y2) :
+        x1(_x1),
+        y1(_y1),
+        x2(_x2),
+        y2(_y2)
+    {
+
+    }
+
+    int x1, y1;
+    int x2, y2;
+};
+
 struct ChessBoard {
 
     // Store the board as a series of "bit boards"
@@ -129,32 +153,10 @@ struct ChessBoard {
                 blackKingsBoard;
     }
 
-
+    std::vector<ChessMove> m_legalMoves;
 };
 
-struct ChessMove {
 
-    ChessMove() :
-        x1(INVALID_FILE),
-        y1(INVALID_RANK),
-        x2(INVALID_FILE),
-        y2(INVALID_RANK)
-    {
-
-    }
-
-    ChessMove(int _x1, int _y1, int _x2, int _y2) :
-        x1(_x1),
-        y1(_y1),
-        x2(_x2),
-        y2(_y2)
-    {
-
-    }
-
-    int x1, y1;
-    int x2, y2;
-};
 
 class Chess {
 
@@ -169,7 +171,7 @@ class Chess {
         void printBoard(const ChessBoard& board);
 
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
-        void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print = true);
+        void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print = true, bool recompute_legal = false);
 
         void getBestMove(int& x1, int& y1, int& x2, int& y2); 
 

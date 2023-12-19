@@ -680,11 +680,11 @@ void Chess::addPieceToSquare(ChessBoard& board, enum PieceTypes type, int x, int
 
 void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side)
 {
-    makeMoveForBoard(m_board, x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side);
+    makeMoveForBoard(m_board, x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side, true, true);
 }
 
 
-void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print)
+void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print, bool recompute_legal)
 {
 
     ep = false;
@@ -787,10 +787,19 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     removePieceFromSquare(board, start_piece, x1, y1);
     addPieceToSquare(board, start_piece, x2, y2);
     
+    board.m_isWhitesTurn = !board.m_isWhitesTurn;
+   
+    // Compute legal moves for board
+    if (recompute_legal)
+    {
+        board.m_legalMoves.clear();
+        getLegalMovesForBoardAsVector(board, board.m_legalMoves);
+    }
+
     if (print)
     {
         printBoard(board);
-        if (kingIsInCheck(board, !board.m_isWhitesTurn))
+        if (kingIsInCheck(board, board.m_isWhitesTurn))
         {
             if (movesForPlayer(board, !board.m_isWhitesTurn) == 0)
                 printf("Checkmate!\n");
@@ -804,7 +813,6 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
         printf("Scores: white = %f  black = %f\n", w, b);
     }
 
-    board.m_isWhitesTurn = !board.m_isWhitesTurn;
 
 }
 
@@ -1044,9 +1052,17 @@ uint64_t Chess::movesForPlayer(const ChessBoard& board, bool white)
 static double sum_bits_and_multiply(uint64_t bb, double multiplier)
 {
     int sum = 0;
-    for (int i = 0; i < 64; i ++)
-        if (bb & (1ULL << i))
-            sum++;
+    //for (int i = 0; i < 64; i ++)
+    //    if (bb & (1ULL << i))
+    //        sum++;
+    
+    if (!(bb & (bb - 1))) return multiplier;    // Power of two: 1 bit
+    
+    while (bb) {
+       sum++;
+       bb &= bb - 1; // reset LS1B
+    }
+
     return sum * multiplier;
 }
 
@@ -1113,22 +1129,29 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
     black_score += 0.01*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
     black_score += 0.01*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
 
-    uint64_t movesWhite = movesForPlayer(board, true);  
-    uint64_t movesBlack = movesForPlayer(board, false);
-   
-    white_score += 0.01*sum_bits(movesWhite);
-    black_score += 0.01*sum_bits(movesBlack);
-
-    // Compute checkmate
-
-    if (kingIsInCheck(board, true) && (movesWhite == 0))
+    if (board.m_isWhitesTurn)
     {
-        black_score += 900.0;
+        int movesWhite = board.m_legalMoves.size();
+        white_score += 0.01*sum_bits(movesWhite);
+
+        // Compute checkmate
+
+        if (kingIsInCheck(board, true) && (movesWhite == 0))
+        {
+            black_score += 900.0;
+        }
     }
-
-    if (kingIsInCheck(board, false) && (movesBlack == 0))
+    else 
     {
-        white_score += 900.0;
+        int movesBlack = board.m_legalMoves.size();
+        white_score += 0.01*sum_bits(movesBlack);
+
+        // Compute checkmate
+
+        if (kingIsInCheck(board, false) && (movesBlack == 0))
+        {
+            white_score += 900.0;
+        }
     }
 
 }
@@ -1169,13 +1192,9 @@ void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<C
 double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
 {
 
-    std::vector<ChessMove> vec;
-
-    getLegalMovesForBoardAsVector(board, vec);
-        
     npos++;
 
-    if ((depth == 0) || (vec.size() == 0))
+    if ((depth == 0) || (board.m_legalMoves.size() == 0))
     {
         double whiteScore = 0.0, blackScore = 0.0;
         evalBoard(board, whiteScore, blackScore); 
@@ -1194,13 +1213,13 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
     {
         double score = -INFINITY;
 
-        for (const auto & m : vec)
+        for (const auto & m : board.m_legalMoves)
         {
             ChessBoard b = board;
             bool ep, castle_kings_side, castle_queens_side;
             ChessMove mm;
 
-            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
+            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false, true);
 
             double newscore = minimaxAlphaBeta(b, white, mm, false, depth - 1, npos, alpha, beta); 
             if (newscore > score)
@@ -1217,13 +1236,13 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
     else
     {
         double score = INFINITY;
-        for (const auto & m : vec)
+        for (const auto & m : board.m_legalMoves)
         {
             ChessBoard b = board;
             bool ep, castle_kings_side, castle_queens_side;
             ChessMove mm;
 
-            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false);
+            makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false, true);
 
             double newscore = minimaxAlphaBeta(b, white, mm, true, depth - 1, npos, alpha, beta); 
             if (newscore < score)
@@ -1252,7 +1271,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
-    double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 4, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 6, npos, -INFINITY, INFINITY);
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     
