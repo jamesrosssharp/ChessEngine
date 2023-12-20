@@ -55,6 +55,15 @@ enum PieceTypes {
     BLACK_PIECES    = BLACK_PAWN | BLACK_KNIGHT | BLACK_BISHOP | BLACK_ROOK | BLACK_KING | BLACK_QUEEN
 }; 
 
+enum SimplePieceTypes {
+    PIECE_PAWN = 0,
+    PIECE_KNIGHT = 1,
+    PIECE_BISHOP = 2,
+    PIECE_ROOK = 3,
+    PIECE_QUEEN = 4,
+    PIECE_KING = 5
+};
+
 enum Files {
     A_FILE = 0,
     B_FILE = 1,
@@ -196,11 +205,18 @@ class Chess {
         void removePieceFromSquare       (ChessBoard& board, enum PieceTypes type, int x, int y);
         void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
+        void computeBlockersAndBeyond();
+
         ChessBoard m_board;
 
         std::uint64_t m_totalCheckTestMicroseconds;
         std::uint64_t m_totalGenerateMoveMicroseconds;
         std::uint64_t m_totalEvaluateMicroseconds;
         std::uint64_t m_totalGenLegalMicroseconds;
+
+        // Lookup tables for "blockers and beyond": https://www.chessprogramming.org/Blockers_and_Beyond
+        std::uint64_t m_pieceMoves[6][64];
+        std::uint64_t m_arrBlockersAndBeyond[6][64];
+        std::uint64_t m_arrBehind[64][64];
 
 };

@@ -117,6 +117,7 @@ Chess::Chess()  :
     m_totalEvaluateMicroseconds(0),
     m_totalGenLegalMicroseconds(0)
 {
+    computeBlockersAndBeyond();
     resetBoard();
     printBoard(m_board);
 
@@ -1132,7 +1133,7 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
     if (board.m_isWhitesTurn)
     {
         int movesWhite = board.m_legalMoves.size();
-        white_score += 0.01*sum_bits(movesWhite);
+        //white_score += 0.01*sum_bits(movesWhite);
 
         // Compute checkmate
 
@@ -1144,7 +1145,7 @@ void Chess::evalBoard(const ChessBoard& board, double& white_score, double& blac
     else 
     {
         int movesBlack = board.m_legalMoves.size();
-        white_score += 0.01*sum_bits(movesBlack);
+        //white_score += 0.01*sum_bits(movesBlack);
 
         // Compute checkmate
 
@@ -1339,3 +1340,88 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
     y2 = m.y2;
 
 }
+
+void Chess::computeBlockersAndBeyond()
+{
+/*        std::uint64_t m_pieceMoves[6][64];
+        std::uint64_t m_arrBlockersAndBeyond[6][64];
+        std::uint64_t m_arrBehind[64][64];
+*/
+
+    // Compute behind table
+
+    for (int sq1 = 0; sq1 < 64; sq1++)
+    {
+        int x1 = sq1 & 7;
+        int y1 = sq1 >> 3;
+
+        for (int sq2 = 0; sq2 < 64; sq2++)
+        {
+
+            int x2 = sq2 & 7;
+            int y2 = sq2 >> 3;
+
+            // We are standing on sq1. Fire a ray toward sq2, if we can. compute squares behind sq2.
+            
+            int dx = x2 - x1;
+            int dy = y2 - y1;
+
+            if ((dx > 0) && (dy > 0) && (dx == dy))
+            {
+                // Gradient = (1, 1)
+                dx = 1;
+                dy = 1;
+            }
+            else if ((dx < 0) && (dy > 0) && (-dx == dy))
+            {
+                // Gradient = (-1, 1)
+                dx = -1;
+                dy = 1;
+            }
+            else if ((dx < 0) && (dy < 0) && (dx == dy))
+            {
+                // Gradient = (-1, -1)
+                dx = -1;
+                dy = -1;
+            }
+            else if ((dx > 0) && (dy < 0) && (dx == -dy))
+            {
+                // Gradient = (1, -1)
+                dx = 1;
+                dy = -1;
+            }
+            else if (dx == 0)
+            {
+                dy = (dy > 0) ? 1 : -1;
+            }
+            else if (dy == 0)
+            {
+                dx = (dx > 0) ? 1 : -1;
+            }
+            else
+            {
+                dx = 0;
+                dy = 0;
+            }
+
+            m_arrBehind[sq1][sq2] = 0;
+            
+            if (dx || dy)
+            {
+                do {
+                    x2 += dx;
+                    y2 += dy;
+
+                    if (IS_IN_BOARD(x2, y2))
+                        m_arrBehind[sq1][sq2] |= COORD_TO_BIT(x2, y2);
+                } while (IS_IN_BOARD(x2, y2));
+            }
+        }
+    }
+
+    // Test array behind
+    
+    printf("Arr behind for d4, e5:\n");
+    printBitBoard(m_arrBehind[27][36]);
+}
+
