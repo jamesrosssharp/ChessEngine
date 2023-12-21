@@ -777,7 +777,10 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     addPieceToSquare(board, start_piece, x2, y2);
     
     board.m_isWhitesTurn = !board.m_isWhitesTurn;
-   
+
+    board.whitePiecesBoard = board.allWhitePieces();
+    board.blackPiecesBoard = board.allBlackPieces();
+
     // Compute legal moves for board
     if (recompute_legal)
     {
@@ -868,19 +871,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while(bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : knightMoves)
-            {
-                int xx = x + p.first;
-                int yy = y + p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb; // Isolate LS1B
+            uint64_t moves = pieceAttacks(PIECE_KNIGHT, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
+            bb &= bb - 1;
         }
 
     }
@@ -893,23 +887,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while(bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : bishopMoves)
-            {
-                for (int multiplier = 1; multiplier < 8; multiplier++)
-                {    
-                    int xx = x + multiplier*p.first;
-                    int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
-                    if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
-                }
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb; // Isolate LS1B
+            uint64_t moves = pieceAttacks(PIECE_BISHOP, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
+            bb &= bb - 1;
         }
 
     }
@@ -922,23 +903,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while(bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : rookMoves)
-            {
-                for (int multiplier = 1; multiplier < 8; multiplier++)
-                {    
-                    int xx = x + multiplier*p.first;
-                    int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
-                    if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
-                }
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb; // Isolate LS1B
+            uint64_t moves = pieceAttacks(PIECE_ROOK, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
+            bb &= bb - 1;
         }
 
     }
@@ -951,23 +919,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while(bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : queenMoves)
-            {
-                for (int multiplier = 1; multiplier < 8; multiplier++)
-                {    
-                    int xx = x + multiplier*p.first;
-                    int yy = y + multiplier*p.second;
-                    if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
-                    if (COORD_TO_BIT(xx, yy) & (board.allWhitePieces() | board.allBlackPieces())) break;
-                }
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb; // Isolate LS1B
+            uint64_t moves = pieceAttacks(PIECE_QUEEN, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
+            bb &= bb - 1;
         }
 
     }
@@ -979,19 +934,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while(bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : kingMoves)
-            {
-                int xx = x + p.first;
-                int yy = y + p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & (white ? board.whiteKingsBoard : board.blackKingsBoard))) goto check; 
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb; // Isolate LS1B
+            uint64_t moves = pieceAttacks(PIECE_KING, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
+            bb &= bb - 1;
         }
 
     }
@@ -1053,15 +999,12 @@ uint64_t Chess::movesForPlayer(const ChessBoard& board, bool white)
 static double sum_bits_and_multiply(uint64_t bb, double multiplier)
 {
     int sum = 0;
-    //for (int i = 0; i < 64; i ++)
-    //    if (bb & (1ULL << i))
-    //        sum++;
     
     if (bb && !(bb & (bb - 1))) return multiplier;    // Power of two: 1 bit
     
     while (bb) {
        sum++;
-       bb &= bb - 1; // reset LS1B
+       bb &= bb - 1;
     }
 
     return sum * multiplier;
@@ -1083,14 +1026,6 @@ static double multiply_bits_with_weights_reverse(uint64_t bb, const double* weig
         for (int y = 0; y < 8; y++)
             if (bb & (1ULL << (x + y*8)))
                 sum += weights[x + (7-y)*8 ];
-    return sum;
-}
-
-static int sum_bits(uint64_t bb)
-{
-    int sum = 0;
-    for (int i = 0; i < 64; i++)
-        if (bb & (1ULL << i)) sum++;
     return sum;
 }
 
@@ -1418,6 +1353,7 @@ void Chess::computeBlockersAndBeyond()
         int y1 = sq >> 3;
 
         m_pieceMoves[PIECE_ROOK][sq] = 0;
+        m_arrBlockersAndBeyond[PIECE_ROOK][sq] = 0;
 
         for (const auto& m : rookMoves)
         {
@@ -1426,7 +1362,12 @@ void Chess::computeBlockersAndBeyond()
             {
                 int x2 = x1 + i*m.first;
                 int y2 = y1 + i*m.second;
-            
+                int x3 = x1 + (i+1)*m.first;
+                int y3 = y1 + (i+1)*m.second;
+
+                if (IS_IN_BOARD(x3, y3)) m_arrBlockersAndBeyond[PIECE_ROOK][sq] 
+                        |= COORD_TO_BIT(x2, y2); 
+ 
                 if (!IS_IN_BOARD(x2, y2)) break;
 
                 m_pieceMoves[PIECE_ROOK][sq] |= COORD_TO_BIT(x2, y2);
@@ -1443,6 +1384,7 @@ void Chess::computeBlockersAndBeyond()
         int y1 = sq >> 3;
 
         m_pieceMoves[PIECE_QUEEN][sq] = 0;
+        m_arrBlockersAndBeyond[PIECE_QUEEN][sq] = 0;
 
         for (const auto& m : queenMoves)
         {
@@ -1451,7 +1393,12 @@ void Chess::computeBlockersAndBeyond()
             {
                 int x2 = x1 + i*m.first;
                 int y2 = y1 + i*m.second;
-            
+                int x3 = x1 + (i+1)*m.first;
+                int y3 = y1 + (i+1)*m.second;
+
+                if (IS_IN_BOARD(x3, y3)) m_arrBlockersAndBeyond[PIECE_QUEEN][sq] 
+                        |= COORD_TO_BIT(x2, y2); 
+ 
                 if (!IS_IN_BOARD(x2, y2)) break;
 
                 m_pieceMoves[PIECE_QUEEN][sq] |= COORD_TO_BIT(x2, y2);
@@ -1467,7 +1414,8 @@ void Chess::computeBlockersAndBeyond()
         int y1 = sq >> 3;
 
         m_pieceMoves[PIECE_KING][sq] = 0;
-
+        m_arrBlockersAndBeyond[PIECE_KING][sq] = 0;
+        
         for (const auto& m : kingMoves)
         {
 

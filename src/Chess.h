@@ -132,6 +132,9 @@ struct ChessBoard {
     uint64_t blackQueensBoard;
     uint64_t blackKingsBoard;
 
+    uint64_t whitePiecesBoard;
+    uint64_t blackPiecesBoard;
+
     // Flags 
     bool m_isWhitesTurn;
     int m_can_en_passant_file;
@@ -211,6 +214,27 @@ class Chess {
         void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
         void computeBlockersAndBeyond();
+
+        int bitScanForward(uint64_t bb)
+        {
+            return __builtin_ctzll(bb);
+        }
+
+        uint64_t pieceAttacks(enum SimplePieceTypes  piece, int sq, uint64_t occupied)
+        {
+            // First, get piece moves
+            uint64_t moves = m_pieceMoves[piece][sq];
+
+            // Compute blockers
+            for (uint64_t bb = occupied & m_arrBlockersAndBeyond[piece][sq]; bb != 0; bb &= bb - 1)
+            {
+                int sq2 = bitScanForward(bb);
+                moves &= ~m_arrBehind[sq][sq2];
+            }
+
+            return moves;
+        }
+
 
         ChessBoard m_board;
 

@@ -81,6 +81,9 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
     printf("Blockers and beyond for bishop, f7\n");
     m_chess->printBitBoard(m_chess->getBlockersAndBeyond(PIECE_BISHOP, 53));
 
+    printf("Blockers and beyond for queen, d4\n");
+    m_chess->printBitBoard(m_chess->getBlockersAndBeyond(PIECE_QUEEN, 27));
+
 
 }
 
