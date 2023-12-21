@@ -1348,7 +1348,14 @@ void Chess::computeBlockersAndBeyond()
         std::uint64_t m_arrBehind[64][64];
 */
 
-    // Compute piece moves
+    // Compute piece moves and occupancy mask
+
+    // Pawns - set to zero
+    for (int sq = 0; sq < 64; sq++)
+    {
+        m_pieceMoves[PIECE_PAWN][sq] = 0;
+        m_arrBlockersAndBeyond[PIECE_PAWN][sq] = 0;
+    }
 
     // Knights
 
@@ -1358,7 +1365,8 @@ void Chess::computeBlockersAndBeyond()
         int y1 = sq >> 3;
 
         m_pieceMoves[PIECE_KNIGHT][sq] = 0;
-
+        m_arrBlockersAndBeyond[PIECE_KNIGHT][sq] = 0;
+        
         for (const auto& m : knightMoves)
         {
 
@@ -1368,6 +1376,107 @@ void Chess::computeBlockersAndBeyond()
             if (!IS_IN_BOARD(x2, y2)) continue;
 
             m_pieceMoves[PIECE_KNIGHT][sq] |= COORD_TO_BIT(x2, y2);
+        }
+
+    }
+
+    // Bishops
+
+    for (int sq = 0; sq < 64; sq++)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pieceMoves[PIECE_BISHOP][sq] = 0;
+        m_arrBlockersAndBeyond[PIECE_BISHOP][sq] = 0;
+
+        for (const auto& m : bishopMoves)
+        {
+
+            for (int i = 1; i < 8; i++)
+            {
+                int x2 = x1 + i*m.first;
+                int y2 = y1 + i*m.second;
+                int x3 = x1 + (i+1)*m.first;
+                int y3 = y1 + (i+1)*m.second;
+
+                if (IS_IN_BOARD(x3, y3)) m_arrBlockersAndBeyond[PIECE_BISHOP][sq] 
+                        |= COORD_TO_BIT(x2, y2); 
+                if (!IS_IN_BOARD(x2, y2)) break;
+
+                m_pieceMoves[PIECE_BISHOP][sq] |= COORD_TO_BIT(x2, y2);
+            }
+        }
+
+    }
+
+    // Rooks
+
+    for (int sq = 0; sq < 64; sq++)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pieceMoves[PIECE_ROOK][sq] = 0;
+
+        for (const auto& m : rookMoves)
+        {
+
+            for (int i = 1; i < 8; i++)
+            {
+                int x2 = x1 + i*m.first;
+                int y2 = y1 + i*m.second;
+            
+                if (!IS_IN_BOARD(x2, y2)) break;
+
+                m_pieceMoves[PIECE_ROOK][sq] |= COORD_TO_BIT(x2, y2);
+            }
+        }
+
+    }
+
+  // Queens
+
+    for (int sq = 0; sq < 64; sq++)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pieceMoves[PIECE_QUEEN][sq] = 0;
+
+        for (const auto& m : queenMoves)
+        {
+
+            for (int i = 1; i < 8; i++)
+            {
+                int x2 = x1 + i*m.first;
+                int y2 = y1 + i*m.second;
+            
+                if (!IS_IN_BOARD(x2, y2)) break;
+
+                m_pieceMoves[PIECE_QUEEN][sq] |= COORD_TO_BIT(x2, y2);
+            }
+        }
+
+    }
+
+    // Kings
+    for (int sq = 0; sq < 64; sq++)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pieceMoves[PIECE_KING][sq] = 0;
+
+        for (const auto& m : kingMoves)
+        {
+
+            int x2 = x1 + m.first;
+            int y2 = y1 + m.second;
+            
+            if (!IS_IN_BOARD(x2, y2)) continue;
+
+            m_pieceMoves[PIECE_KING][sq] |= COORD_TO_BIT(x2, y2);
         }
 
     }

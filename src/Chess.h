@@ -191,6 +191,7 @@ class Chess {
 
         std::uint64_t getArrBehind(int sq1, int sq2) { return m_arrBehind[sq1][sq2]; }
         std::uint64_t getPieceMoves(int piece, int sq) { return m_pieceMoves[piece][sq]; }
+        std::uint64_t getBlockersAndBeyond(int piece, int sq) { return m_arrBlockersAndBeyond[piece][sq]; }
 
     protected:
 

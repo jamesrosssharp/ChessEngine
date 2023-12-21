@@ -66,5 +66,21 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
     printf("Piece moves for Knight, a3\n");
     m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_KNIGHT, 16));
 
+    printf("Piece moves for Bishop, e5\n");
+    m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_BISHOP, 36));
+
+    printf("Piece moves for Rook, h8\n");
+    m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_ROOK, 63));
+
+    printf("Piece moves for Queen, d3\n");
+    m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_QUEEN, 19));
+
+    printf("Piece moves for King, f7\n");
+    m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_KING, 53));
+
+    printf("Blockers and beyond for bishop, f7\n");
+    m_chess->printBitBoard(m_chess->getBlockersAndBeyond(PIECE_BISHOP, 53));
+
+
 }
 
