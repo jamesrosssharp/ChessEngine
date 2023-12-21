@@ -187,14 +187,18 @@ class Chess {
         void getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec);
         void getLegalMovesForBoardAsVectorSlow(const ChessBoard& board, std::vector<ChessMove>& vec);
 
-    private:
+        void printBitBoard(uint64_t board);
+
+        std::uint64_t getArrBehind(int sq1, int sq2) { return m_arrBehind[sq1][sq2]; }
+        std::uint64_t getPieceMoves(int piece, int sq) { return m_pieceMoves[piece][sq]; }
+
+    protected:
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
 
         double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
 
 
-        void printBitBoard(uint64_t board);
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
         
         bool kingIsInCheck(const ChessBoard& board, bool white);

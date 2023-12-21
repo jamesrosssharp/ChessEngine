@@ -1348,6 +1348,30 @@ void Chess::computeBlockersAndBeyond()
         std::uint64_t m_arrBehind[64][64];
 */
 
+    // Compute piece moves
+
+    // Knights
+
+    for (int sq = 0; sq < 64; sq++)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pieceMoves[PIECE_KNIGHT][sq] = 0;
+
+        for (const auto& m : knightMoves)
+        {
+
+            int x2 = x1 + m.first;
+            int y2 = y1 + m.second;
+            
+            if (!IS_IN_BOARD(x2, y2)) continue;
+
+            m_pieceMoves[PIECE_KNIGHT][sq] |= COORD_TO_BIT(x2, y2);
+        }
+
+    }
+
     // Compute behind table
 
     for (int sq1 = 0; sq1 < 64; sq1++)
@@ -1419,9 +1443,5 @@ void Chess::computeBlockersAndBeyond()
         }
     }
 
-    // Test array behind
-    
-    printf("Arr behind for d4, e5:\n");
-    printBitBoard(m_arrBehind[27][36]);
 }
 
