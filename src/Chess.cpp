@@ -826,19 +826,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while (bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : pawnCaptures)
-            {
-                int xx = x + p.first;
-                int yy = y - p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.whiteKingsBoard)) goto check; 
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb;
+            uint64_t attacks = m_pawnAttacksBlack[bitScanForward(bb2)];
+            if (board.whiteKingsBoard & attacks) goto check; 
+            bb &= bb - 1;
         }
     }
     else
@@ -847,19 +838,10 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
 
         while (bb)
         {
-            int idx = 63 - __builtin_clzl(bb);
-
-            int x = idx & 7;
-            int y = idx >> 3;
-
-            for (const auto& p : pawnCaptures)
-            {
-                int xx = x + p.first;
-                int yy = y + p.second;
-                if (IS_IN_BOARD(xx, yy) && (COORD_TO_BIT(xx, yy) & board.blackKingsBoard)) goto check; 
-            }
-
-            bb &= ~(1ULL << idx);
+            uint64_t bb2 = bb & -bb;
+            uint64_t attacks = m_pawnAttacksWhite[bitScanForward(bb2)];
+            if (board.blackKingsBoard & attacks) goto check; 
+            bb &= bb - 1;
         }
     }
 
@@ -1291,6 +1273,61 @@ void Chess::computeBlockersAndBeyond()
         m_pieceMoves[PIECE_PAWN][sq] = 0;
         m_arrBlockersAndBeyond[PIECE_PAWN][sq] = 0;
     }
+
+    // Now compute specialised pawn arrays
+
+    for (int sq = 0; sq < 64; sq++)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pawnMovesWhite[sq] = 0;
+        m_pawnAttacksWhite[sq] = 0;
+
+        if (y1 == EIGHTH_RANK) break;
+
+        m_pawnMovesWhite[sq] |= COORD_TO_BIT(x1, y1 + 1);
+
+        if (IS_IN_BOARD(x1 - 1, y1 + 1))
+            m_pawnAttacksWhite[sq] |= COORD_TO_BIT(x1 - 1, y1 + 1);
+
+        if (IS_IN_BOARD(x1 + 1, y1 + 1))
+            m_pawnAttacksWhite[sq] |= COORD_TO_BIT(x1 + 1, y1 + 1);
+
+        if (y1 == SEVENTH_RANK) continue;
+
+        m_pawnMovesWhite[sq] |= COORD_TO_BIT(x1, y1 + 2);
+
+    }
+
+    for (int sq = 63; sq >= 0; sq--)
+    {
+        int x1 = sq & 7;
+        int y1 = sq >> 3;
+
+        m_pawnMovesBlack[sq] = 0;
+        m_pawnAttacksBlack[sq] = 0;
+
+        if (y1 == FIRST_RANK) break;
+
+        m_pawnMovesBlack[sq] |= COORD_TO_BIT(x1, y1 - 1);
+
+        if (IS_IN_BOARD(x1 - 1, y1 - 1))
+            m_pawnAttacksBlack[sq] |= COORD_TO_BIT(x1 - 1, y1 + 1);
+
+        if (IS_IN_BOARD(x1 + 1, y1 - 1))
+            m_pawnAttacksBlack[sq] |= COORD_TO_BIT(x1 + 1, y1 + 1);
+
+        if (y1 == SECOND_RANK) continue;
+
+        m_pawnMovesBlack[sq] |= COORD_TO_BIT(x1, y1 - 2);
+
+    }
+ 
+
+    //std::uint64_t m_pawnMovesBlack[64];
+    //std::uint64_t m_pawnAttacksBlack[64];
+
 
     // Knights
 

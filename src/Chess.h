@@ -247,5 +247,9 @@ class Chess {
         std::uint64_t m_pieceMoves[6][64];
         std::uint64_t m_arrBlockersAndBeyond[6][64];
         std::uint64_t m_arrBehind[64][64];
+        std::uint64_t m_pawnMovesWhite[64];
+        std::uint64_t m_pawnMovesBlack[64];
+        std::uint64_t m_pawnAttacksWhite[64];
+        std::uint64_t m_pawnAttacksBlack[64];
 
 };
