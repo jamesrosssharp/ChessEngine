@@ -36,6 +36,7 @@ SOFTWARE.
 
 #include <string>
 #include <vector>
+#include <functional>
 
 enum PieceTypes {
     WHITE_PAWN      = 1 << 0,
@@ -91,6 +92,8 @@ enum Ranks {
 #define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
 #define IS_IN_BOARD(file, rank) ((file >= A_FILE) && (file <= H_FILE) && (rank >= FIRST_RANK) && (rank <= EIGHTH_RANK))
 
+
+
 struct ChessMove {
 
     ChessMove() :
@@ -134,6 +137,8 @@ struct ChessBoard {
 
     uint64_t whitePiecesBoard;
     uint64_t blackPiecesBoard;
+
+    uint64_t allPiecesBoard;
 
     // Flags 
     bool m_isWhitesTurn;
@@ -195,13 +200,18 @@ class Chess {
         std::uint64_t getArrBehind(int sq1, int sq2) { return m_arrBehind[sq1][sq2]; }
         std::uint64_t getPieceMoves(int piece, int sq) { return m_pieceMoves[piece][sq]; }
         std::uint64_t getBlockersAndBeyond(int piece, int sq) { return m_arrBlockersAndBeyond[piece][sq]; }
+        std::uint64_t getWhitePawnAttacks(int sq) { return m_pawnAttacksWhite[sq]; }
+        std::uint64_t getBlackPawnAttacks(int sq) { return m_pawnAttacksBlack[sq]; }
 
     protected:
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
+        void evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score);
 
         double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
+        double minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
 
+        void generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t, uint64_t)>);
 
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
         
@@ -215,7 +225,7 @@ class Chess {
 
         void computeBlockersAndBeyond();
 
-        int bitScanForward(uint64_t bb)
+        static int bitScanForward(uint64_t bb)
         {
             return __builtin_ctzll(bb);
         }
@@ -235,6 +245,17 @@ class Chess {
             return moves;
         }
 
+        void moveFromBitboards(ChessMove& move, uint64_t from, uint64_t to)
+        {
+            int fromSq = bitScanForward(from);
+            int toSq   = bitScanForward(to);
+
+            move.x1 = fromSq & 7;
+            move.y1 = fromSq >> 3;
+            move.x2 = toSq & 7;
+            move.y2 = toSq >> 3;
+                
+        } 
 
         ChessBoard m_board;
 

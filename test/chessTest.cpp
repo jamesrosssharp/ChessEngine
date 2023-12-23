@@ -63,6 +63,14 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
     m_chess->printBitBoard(m_chess->getArrBehind(5,37));
     ASSERT_EQ(m_chess->getArrBehind(5,37), (1ULL<<45) | (1ULL<<53) | (1ULL<<61));
 
+    printf("Arr behind for e2, e3:\n");
+    m_chess->printBitBoard(m_chess->getArrBehind(12, 20));
+
+    printf("Arr behind for d7, d6:\n");
+    m_chess->printBitBoard(m_chess->getArrBehind(51, 43));
+
+
+
     printf("Piece moves for Knight, a3\n");
     m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_KNIGHT, 16));
 
@@ -84,6 +92,11 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
     printf("Blockers and beyond for queen, d4\n");
     m_chess->printBitBoard(m_chess->getBlockersAndBeyond(PIECE_QUEEN, 27));
 
+    printf("White Pawn attacks for e3\n");
+    m_chess->printBitBoard(m_chess->getWhitePawnAttacks(20));
+
+    printf("Black Pawn attacks for d7\n");
+    m_chess->printBitBoard(m_chess->getBlackPawnAttacks(51));
 
 }
 

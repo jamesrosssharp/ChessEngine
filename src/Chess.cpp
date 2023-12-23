@@ -1234,7 +1234,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
-    double maxScore = minimaxAlphaBeta(m_board, m_board.m_isWhitesTurn, m, true, 5, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 5, npos, -INFINITY, INFINITY);
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     
@@ -1294,7 +1294,7 @@ void Chess::computeBlockersAndBeyond()
         if (IS_IN_BOARD(x1 + 1, y1 + 1))
             m_pawnAttacksWhite[sq] |= COORD_TO_BIT(x1 + 1, y1 + 1);
 
-        if (y1 == SEVENTH_RANK) continue;
+        if (y1 != SECOND_RANK) continue;
 
         m_pawnMovesWhite[sq] |= COORD_TO_BIT(x1, y1 + 2);
 
@@ -1313,12 +1313,12 @@ void Chess::computeBlockersAndBeyond()
         m_pawnMovesBlack[sq] |= COORD_TO_BIT(x1, y1 - 1);
 
         if (IS_IN_BOARD(x1 - 1, y1 - 1))
-            m_pawnAttacksBlack[sq] |= COORD_TO_BIT(x1 - 1, y1 + 1);
+            m_pawnAttacksBlack[sq] |= COORD_TO_BIT(x1 - 1, y1 - 1);
 
         if (IS_IN_BOARD(x1 + 1, y1 - 1))
-            m_pawnAttacksBlack[sq] |= COORD_TO_BIT(x1 + 1, y1 + 1);
+            m_pawnAttacksBlack[sq] |= COORD_TO_BIT(x1 + 1, y1 - 1);
 
-        if (y1 == SECOND_RANK) continue;
+        if (y1 != SEVENTH_RANK) continue;
 
         m_pawnMovesBlack[sq] |= COORD_TO_BIT(x1, y1 - 2);
 
@@ -1538,4 +1538,208 @@ void Chess::computeBlockersAndBeyond()
     }
 
 }
+
+double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
+{
+    bool isRoot = npos == 0;
+
+    npos++;
+
+    if (depth == 0)
+    {
+        double whiteScore = 0.0;
+        double blackScore = 0.0;
+
+        evalBoardFaster(board, whiteScore, blackScore);
+
+        if (white)
+        {
+            return whiteScore - blackScore;
+        }
+        else 
+        {
+            return blackScore - whiteScore;
+        }
+    }
+
+    if (maximizing)
+    {
+        double score = -INFINITY;
+
+        generateMovesFast(board,
+                [&] (ChessBoard& b, uint64_t from, uint64_t to) 
+                { 
+                    ChessMove mm;            
+    
+                    double newscore = minimaxAlphaBetaFaster(b, white, mm, false, depth - 1, npos, alpha, beta); 
+                    if (newscore > score)
+                    {
+                        score = newscore;
+
+                        if (isRoot)
+                            moveFromBitboards(move, from, to); 
+                    }
+                    alpha = std::max(alpha, newscore);
+                    if (newscore >= beta)
+                        return true; 
+                    return false;
+                });
+
+        return score;
+    }
+    else
+    {
+        double score = INFINITY;
+
+        generateMovesFast(board, 
+                [&] (ChessBoard& b, uint64_t from, uint64_t to) 
+                { 
+                    ChessMove mm;            
+    
+                    double newscore = minimaxAlphaBetaFaster(b, white, mm, false, depth - 1, npos, alpha, beta); 
+                    if (newscore < score)
+                    {
+                        score = newscore;
+                        if (isRoot) // root
+                            moveFromBitboards(move, from, to); 
+                    }
+                    beta = std::max(beta, newscore);
+                    if (newscore <= alpha)
+                        return true;
+                    return false; 
+                });
+
+        return score;
+    }
+
+    return 0.0;
+}
+
+void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t from_bb, uint64_t to_bb)> func)
+{
+
+    uint64_t myPieces  = 0;
+    uint64_t oppPieces = 0;
+    uint64_t allPieces = 0;
+    uint64_t *myPawns;
+    uint64_t *oppPawns;
+    uint64_t *myPawnAttacks;
+    uint64_t *myPawnMoves;
+
+    if (board.m_isWhitesTurn)
+    {
+        myPieces     = board.allWhitePieces();
+        oppPieces    = board.allBlackPieces();
+        allPieces    = board.allWhitePieces() | board.allBlackPieces();
+        myPawns      = &board.whitePawnsBoard;
+        myPawnMoves     = m_pawnMovesWhite;
+        myPawnAttacks   = m_pawnAttacksWhite;
+        oppPawns        = &board.blackPawnsBoard;
+    }
+    else
+    {
+        myPieces     = board.allBlackPieces();
+        oppPieces    = board.allWhitePieces();
+        allPieces    = board.allWhitePieces() | board.allBlackPieces();
+        myPawns      = &board.blackPawnsBoard;
+        myPawnMoves     = m_pawnMovesBlack;
+        myPawnAttacks   = m_pawnAttacksBlack;
+        oppPawns        = &board.whitePawnsBoard;
+    }
+
+    // Pawn moves
+    for (uint64_t bb = *myPawns; bb != 0; bb &= bb - 1)
+    {
+        uint64_t pawn = bb & -bb;
+        int pawnSq = bitScanForward(pawn);
+
+        uint64_t m = myPawnMoves[pawnSq];
+        for (uint64_t mb = m & allPieces; mb != 0; mb &= (mb - 1))
+        {
+            int sq = bitScanForward(mb);
+            m &= ~m_arrBehind[pawnSq][sq];
+        }
+      
+        m &= ~allPieces;
+
+        for (; m != 0; m &= (m-1))
+        {
+            uint64_t mm = m & -m;
+            uint64_t prevPawn = *myPawns;
+
+            *myPawns = *myPawns & ~pawn;
+            *myPawns = *myPawns | mm;
+
+            if (func(board, pawn, mm)) return;
+
+            *myPawns = prevPawn;
+        }
+
+        // Pawn captures
+        m = myPawnAttacks[pawnSq];
+
+        m &= *oppPawns;
+
+        for (; m != 0; m &= (m-1))
+        {
+            uint64_t mm = m & -m;
+            uint64_t prevPawn = *myPawns;
+            uint64_t prevOppPawns = *oppPawns;
+
+            *myPawns = *myPawns & ~pawn;
+            *myPawns = *myPawns | mm;
+            *oppPawns = *oppPawns & ~mm;
+
+            if (func(board, pawn, mm)) return;
+
+            *myPawns = prevPawn;
+            *oppPawns = prevOppPawns;
+        }
+
+
+    }    
+
+}
+
+void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score)
+{
+
+    white_score = 0.0;
+    black_score = 0.0;
+
+    // Compute material
+    white_score += sum_bits_and_multiply(board.whitePawnsBoard, 1.0);
+    white_score += sum_bits_and_multiply(board.whiteKnightsBoard, 3.0);
+    white_score += sum_bits_and_multiply(board.whiteBishopsBoard, 3.0);
+    white_score += sum_bits_and_multiply(board.whiteRooksBoard, 5.0);
+    white_score += sum_bits_and_multiply(board.whiteQueensBoard, 9.0);
+    white_score += sum_bits_and_multiply(board.whiteKingsBoard, 900.0);
+
+
+    black_score += sum_bits_and_multiply(board.blackPawnsBoard, 1.0);
+    black_score += sum_bits_and_multiply(board.blackKnightsBoard, 3.0);
+    black_score += sum_bits_and_multiply(board.blackBishopsBoard, 3.0);
+    black_score += sum_bits_and_multiply(board.blackRooksBoard, 5.0);
+    black_score += sum_bits_and_multiply(board.blackQueensBoard, 9.0);
+    black_score += sum_bits_and_multiply(board.blackKingsBoard, 900.0);
+
+    // Compute positional heuristics
+
+    white_score += 0.001*multiply_bits_with_weights_reverse(board.whitePawnsBoard,   pawnPositionWeights);
+    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteKnightsBoard, knightPositionWeights);
+    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteBishopsBoard, bishopsPositionWeights);
+    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteRooksBoard,   rooksPositionWeights);
+    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteQueensBoard,   queenPositionWeights);
+    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteKingsBoard,   kingPositionWeights);
+
+    black_score += 0.001*multiply_bits_with_weights(board.blackPawnsBoard, pawnPositionWeights);
+    black_score += 0.001*multiply_bits_with_weights(board.blackKnightsBoard, knightPositionWeights);
+    black_score += 0.001*multiply_bits_with_weights(board.blackBishopsBoard, bishopsPositionWeights);
+    black_score += 0.001*multiply_bits_with_weights(board.blackRooksBoard, rooksPositionWeights);
+    black_score += 0.001*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
+    black_score += 0.001*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
+
+}
+
+
 
