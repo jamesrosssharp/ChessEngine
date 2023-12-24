@@ -1621,8 +1621,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     uint64_t myPieces  = 0;
     uint64_t oppPieces = 0;
     uint64_t allPieces = 0;
-    uint64_t *myPawns;
-    uint64_t *oppPawns;
     uint64_t *myPawnAttacks;
     uint64_t *myPawnMoves;
 
@@ -1631,24 +1629,20 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         myPieces     = board.allWhitePieces();
         oppPieces    = board.allBlackPieces();
         allPieces    = board.allWhitePieces() | board.allBlackPieces();
-        myPawns      = &board.whitePawnsBoard;
         myPawnMoves     = m_pawnMovesWhite;
         myPawnAttacks   = m_pawnAttacksWhite;
-        oppPawns        = &board.blackPawnsBoard;
     }
     else
     {
         myPieces     = board.allBlackPieces();
         oppPieces    = board.allWhitePieces();
         allPieces    = board.allWhitePieces() | board.allBlackPieces();
-        myPawns      = &board.blackPawnsBoard;
         myPawnMoves     = m_pawnMovesBlack;
         myPawnAttacks   = m_pawnAttacksBlack;
-        oppPawns        = &board.whitePawnsBoard;
     }
 
     // Pawn moves
-    for (uint64_t bb = *myPawns; bb != 0; bb &= bb - 1)
+    for (uint64_t bb = *board.myPawns(); bb != 0; bb &= bb - 1)
     {
         uint64_t pawn = bb & -bb;
         int pawnSq = bitScanForward(pawn);
@@ -1665,40 +1659,66 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         for (; m != 0; m &= (m-1))
         {
             uint64_t mm = m & -m;
-            uint64_t prevPawn = *myPawns;
+            ChessBoard newb(board);
 
-            *myPawns = *myPawns & ~pawn;
-            *myPawns = *myPawns | mm;
+            *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+            newb.nextTurn();
 
-            if (func(board, pawn, mm)) return;
+            if (func(newb, pawn, mm)) goto done;
 
-            *myPawns = prevPawn;
         }
 
         // Pawn captures
         m = myPawnAttacks[pawnSq];
 
-        m &= *oppPawns;
+        m &= oppPieces;
 
         for (; m != 0; m &= (m-1))
         {
             uint64_t mm = m & -m;
-            uint64_t prevPawn = *myPawns;
-            uint64_t prevOppPawns = *oppPawns;
 
-            *myPawns = *myPawns & ~pawn;
-            *myPawns = *myPawns | mm;
-            *oppPawns = *oppPawns & ~mm;
+            ChessBoard newb(board);
 
-            if (func(board, pawn, mm)) return;
+            *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+            newb.clearOppPieces(mm);
+             
+            newb.nextTurn();
 
-            *myPawns = prevPawn;
-            *oppPawns = prevOppPawns;
+            if (func(newb, pawn, mm)) goto done;
         }
 
 
     }    
 
+    // Knight moves
+
+    for (uint64_t bb = *board.myKnights(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t knight = bb & -bb;
+        int knightSq = bitScanForward(knight);
+        uint64_t moves = m_pieceMoves[PIECE_KNIGHT][knightSq];
+
+        moves &= ~myPieces;
+
+        for (; moves != 0; moves &= moves - 1)
+        {
+            uint64_t mm = moves & -moves;
+
+            ChessBoard newb(board);
+
+            *newb.myPawns() = (*newb.myPawns() & ~knight) | mm;
+            newb.clearOppPieces(mm);
+             
+            newb.nextTurn();
+
+            if (func(newb, knight, mm)) goto done;
+
+        }
+
+    }
+
+done:
+    return;
 }
 
 void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score)

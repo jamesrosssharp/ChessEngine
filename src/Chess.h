@@ -150,6 +150,113 @@ struct ChessBoard {
     bool m_blackARookHasMoved;
     bool m_blackHRookHasMoved;
 
+    uint64_t* pawns[2];
+    uint64_t* knights[2];
+    uint64_t* bishops[2];
+    uint64_t* rooks[2];
+    uint64_t* queens[2];
+    uint64_t* kings[2]; 
+
+    ChessBoard(const ChessBoard& other)
+    {
+        whitePawnsBoard = other.whitePawnsBoard;
+        blackPawnsBoard = other.blackPawnsBoard;
+        whiteKnightsBoard = other.whiteKnightsBoard;
+        blackKnightsBoard = other.blackKnightsBoard;
+        whiteBishopsBoard = other.whiteBishopsBoard;
+        blackBishopsBoard = other.blackBishopsBoard;
+        whiteRooksBoard   = other.whiteRooksBoard;
+        blackRooksBoard   = other.blackRooksBoard;
+        whiteQueensBoard  = other.whiteQueensBoard;
+        blackQueensBoard  = other.blackQueensBoard;
+        whiteKingsBoard   = other.whiteKingsBoard;
+        blackKingsBoard   = other.blackKingsBoard;
+        setUpArrays();
+        m_isWhitesTurn  = other.m_isWhitesTurn;
+
+    }
+
+    ChessBoard()
+    {
+        setUpArrays();
+    }
+
+    void setUpArrays()
+    {
+        pawns[1] = &whitePawnsBoard;
+        pawns[0] = &blackPawnsBoard;
+        knights[1] = &whiteKnightsBoard;
+        knights[0] = &blackKnightsBoard;
+        bishops[1] = &whiteBishopsBoard;
+        bishops[0] = &blackBishopsBoard;
+        rooks[1] = &whiteRooksBoard;
+        rooks[0] = &blackRooksBoard;
+        queens[1] = &whiteQueensBoard;
+        queens[0] = &blackQueensBoard;
+        kings[1]  = &whiteKingsBoard;
+        kings[0]  = &blackKingsBoard;
+    }
+
+    uint64_t* myPawns()
+    {
+        return pawns[(int)m_isWhitesTurn];
+    }
+
+    uint64_t* oppPawns()
+    {
+        return pawns[(int)!m_isWhitesTurn];
+    }
+
+    uint64_t* myKnights()
+    {
+        return knights[(int)m_isWhitesTurn];
+    }
+
+    uint64_t* oppKnights()
+    {
+        return knights[(int)!m_isWhitesTurn];
+    }
+
+    uint64_t* myBishops()
+    {
+        return bishops[(int)m_isWhitesTurn];
+    }
+
+    uint64_t* oppBishops()
+    {
+        return bishops[(int)!m_isWhitesTurn];
+    }
+
+    uint64_t* myRooks()
+    {
+        return rooks[(int)m_isWhitesTurn];
+    }
+
+    uint64_t* oppRooks()
+    {
+        return rooks[(int)!m_isWhitesTurn];
+    }
+
+    uint64_t* myQueens()
+    {
+        return queens[(int)m_isWhitesTurn];
+    }
+
+    uint64_t* oppQueens()
+    {
+        return queens[(int)!m_isWhitesTurn];
+    }
+
+    uint64_t* myKings()
+    {
+        return kings[(int)m_isWhitesTurn];
+    }
+
+    uint64_t* oppKings()
+    {
+        return kings[(int)!m_isWhitesTurn];
+    }
+
     uint64_t allWhitePieces() const
     {
         return  whitePawnsBoard |
@@ -168,6 +275,21 @@ struct ChessBoard {
                 blackRooksBoard |
                 blackQueensBoard |
                 blackKingsBoard;
+    }
+
+    void clearOppPieces(uint64_t bb)
+    {
+        *oppPawns() = *oppPawns() & ~bb;
+        *oppKnights() = *oppKnights() & ~bb;
+        *oppBishops() = *oppBishops() & ~bb;
+        *oppRooks() = *oppRooks() & ~bb;
+        *oppQueens() = *oppQueens() & ~bb;
+        *oppKings() = *oppKings() & ~bb;
+    }
+
+    void nextTurn()
+    {
+        m_isWhitesTurn = !m_isWhitesTurn;
     }
 
     std::vector<ChessMove> m_legalMoves;
