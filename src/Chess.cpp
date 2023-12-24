@@ -978,7 +978,7 @@ uint64_t Chess::movesForPlayer(const ChessBoard& board, bool white)
     return legalMoves;
 }
 
-static double sum_bits_and_multiply(uint64_t bb, double multiplier)
+double Chess::sum_bits_and_multiply(uint64_t bb, double multiplier)
 {
     int sum = 0;
     
@@ -992,22 +992,30 @@ static double sum_bits_and_multiply(uint64_t bb, double multiplier)
     return sum * multiplier;
 }
 
-static double multiply_bits_with_weights(uint64_t bb, const double* weights)
+double Chess::multiply_bits_with_weights(uint64_t bb, const double* weights)
 {
     double sum = 0;
-    for (int i = 0; i < 64; i ++)
-        if (bb & (1ULL << i))
-            sum += weights[i];
+    
+    for ( ; bb != 0; bb &= bb - 1)
+    {
+        int sq = bitScanForward(bb);
+        sum += weights[sq];
+    } 
+    
     return sum;
 }
 
-static double multiply_bits_with_weights_reverse(uint64_t bb, const double* weights)
+double Chess::multiply_bits_with_weights_reverse(uint64_t bb, const double* weights)
 {
     double sum = 0;
-    for (int x = 0; x < 8; x ++)
-        for (int y = 0; y < 8; y++)
-            if (bb & (1ULL << (x + y*8)))
-                sum += weights[x + (7-y)*8 ];
+   
+    for ( ; bb != 0; bb &= bb - 1)
+    {
+        int sq = bitScanForward(bb);
+        sq = sq&7 + (7-(sq>>3))*8;
+        sum += weights[sq];
+    } 
+
     return sum;
 }
 
@@ -1623,6 +1631,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     uint64_t allPieces = 0;
     uint64_t *myPawnAttacks;
     uint64_t *myPawnMoves;
+    uint64_t enPassentSq;
 
     if (board.m_isWhitesTurn)
     {
@@ -1631,6 +1640,10 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         allPieces    = board.allWhitePieces() | board.allBlackPieces();
         myPawnMoves     = m_pawnMovesWhite;
         myPawnAttacks   = m_pawnAttacksWhite;
+        if (board.m_can_en_passant_file != INVALID_FILE)
+            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, THIRD_RANK);
+        else
+            enPassentSq     = 0;
     }
     else
     {
@@ -1639,6 +1652,12 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         allPieces    = board.allWhitePieces() | board.allBlackPieces();
         myPawnMoves     = m_pawnMovesBlack;
         myPawnAttacks   = m_pawnAttacksBlack;
+
+        if (board.m_can_en_passant_file != INVALID_FILE)
+            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, SIXTH_RANK);
+        else
+            enPassentSq     = 0;
+ 
     }
 
     // Pawn moves
@@ -1661,6 +1680,11 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             uint64_t mm = m & -m;
             ChessBoard newb(board);
 
+            int newPawnSq = bitScanForward(mm);
+
+            if (abs(newPawnSq - pawnSq) > 8) newb.m_can_en_passant_file = pawn & 7;
+            else newb.m_can_en_passant_file = INVALID_FILE;
+
             *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
             newb.nextTurn();
 
@@ -1671,7 +1695,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         // Pawn captures
         m = myPawnAttacks[pawnSq];
 
-        m &= oppPieces;
+        m &= (oppPieces | enPassentSq);
 
         for (; m != 0; m &= (m-1))
         {

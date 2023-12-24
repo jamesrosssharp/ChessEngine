@@ -173,7 +173,7 @@ struct ChessBoard {
         blackKingsBoard   = other.blackKingsBoard;
         setUpArrays();
         m_isWhitesTurn  = other.m_isWhitesTurn;
-
+        m_can_en_passant_file = INVALID_FILE;
     }
 
     ChessBoard()
@@ -346,6 +346,10 @@ class Chess {
         void addPieceToSquare            (ChessBoard& board, enum PieceTypes type, int x, int y);
 
         void computeBlockersAndBeyond();
+
+        double sum_bits_and_multiply(uint64_t bb, double multiplier);
+        double multiply_bits_with_weights(uint64_t bb, const double* weights);
+        double multiply_bits_with_weights_reverse(uint64_t bb, const double* weights);
 
         static int bitScanForward(uint64_t bb)
         {
