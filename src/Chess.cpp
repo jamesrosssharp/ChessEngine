@@ -1234,7 +1234,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
-    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 5, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 6, npos, -INFINITY, INFINITY);
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     
@@ -1596,14 +1596,14 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                 { 
                     ChessMove mm;            
     
-                    double newscore = minimaxAlphaBetaFaster(b, white, mm, false, depth - 1, npos, alpha, beta); 
+                    double newscore = minimaxAlphaBetaFaster(b, white, mm, true, depth - 1, npos, alpha, beta); 
                     if (newscore < score)
                     {
                         score = newscore;
                         if (isRoot) // root
                             moveFromBitboards(move, from, to); 
                     }
-                    beta = std::max(beta, newscore);
+                    beta = std::min(beta, newscore);
                     if (newscore <= alpha)
                         return true;
                     return false; 
@@ -1690,6 +1690,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
     }    
 
+
     // Knight moves
 
     for (uint64_t bb = *board.myKnights(); bb != 0; bb &= bb - 1)
@@ -1706,7 +1707,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
             ChessBoard newb(board);
 
-            *newb.myPawns() = (*newb.myPawns() & ~knight) | mm;
+            *newb.myKnights() = (*newb.myKnights() & ~knight) | mm;
             newb.clearOppPieces(mm);
              
             newb.nextTurn();
@@ -1716,6 +1717,115 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         }
 
     }
+    
+    // Bishop moves
+
+    for (uint64_t bb = *board.myBishops(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t bishop = bb & -bb;
+        int bishopSq = bitScanForward(bishop);
+        uint64_t moves = pieceAttacks(PIECE_BISHOP, bishopSq, allPieces);
+
+        moves &= ~myPieces;
+
+        for (; moves != 0; moves &= moves - 1)
+        {
+            uint64_t mm = moves & -moves;
+
+            ChessBoard newb(board);
+
+            *newb.myBishops() = (*newb.myBishops() & ~bishop) | mm;
+            newb.clearOppPieces(mm);
+             
+            newb.nextTurn();
+
+            if (func(newb, bishop, mm)) goto done;
+
+        }
+
+    }
+
+    // Rook moves
+
+    for (uint64_t bb = *board.myRooks(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t rook = bb & -bb;
+        int rookSq = bitScanForward(rook);
+        uint64_t moves = pieceAttacks(PIECE_ROOK, rookSq, allPieces);
+
+        moves &= ~myPieces;
+
+        for (; moves != 0; moves &= moves - 1)
+        {
+            uint64_t mm = moves & -moves;
+
+            ChessBoard newb(board);
+
+            *newb.myRooks() = (*newb.myRooks() & ~rook) | mm;
+            newb.clearOppPieces(mm);
+             
+            newb.nextTurn();
+
+            if (func(newb, rook, mm)) goto done;
+
+        }
+
+    }
+
+    // Queen moves
+
+    for (uint64_t bb = *board.myQueens(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t queen = bb & -bb;
+        int queenSq = bitScanForward(queen);
+        uint64_t moves = pieceAttacks(PIECE_QUEEN, queenSq, allPieces);
+
+        moves &= ~myPieces;
+
+        for (; moves != 0; moves &= moves - 1)
+        {
+            uint64_t mm = moves & -moves;
+
+            ChessBoard newb(board);
+
+            *newb.myQueens() = (*newb.myQueens() & ~queen) | mm;
+            newb.clearOppPieces(mm);
+             
+            newb.nextTurn();
+
+            if (func(newb, queen, mm)) goto done;
+
+        }
+
+    }
+
+   // King moves
+
+    for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t king = bb & -bb;
+        int kingSq = bitScanForward(king);
+        uint64_t moves = m_pieceMoves[PIECE_KING][kingSq];
+
+        moves &= ~myPieces;
+
+        for (; moves != 0; moves &= moves - 1)
+        {
+            uint64_t mm = moves & -moves;
+
+            ChessBoard newb(board);
+
+            *newb.myKings() = (*newb.myKings() & ~king) | mm;
+            newb.clearOppPieces(mm);
+             
+            newb.nextTurn();
+
+            if (func(newb, king, mm)) goto done;
+
+        }
+
+    }
+
 
 done:
     return;
