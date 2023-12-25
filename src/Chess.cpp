@@ -1012,7 +1012,7 @@ double Chess::multiply_bits_with_weights_reverse(uint64_t bb, const double* weig
     for ( ; bb != 0; bb &= bb - 1)
     {
         int sq = bitScanForward(bb);
-        sq = sq&7 + (7-(sq>>3))*8;
+        sq = (sq&7) + (7-(sq>>3))*8;
         sum += weights[sq];
     } 
 
