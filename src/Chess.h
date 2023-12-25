@@ -174,6 +174,13 @@ struct ChessBoard {
         setUpArrays();
         m_isWhitesTurn  = other.m_isWhitesTurn;
         m_can_en_passant_file = INVALID_FILE;
+   
+        m_whiteKingHasMoved = other.m_whiteKingHasMoved;
+        m_blackKingHasMoved = other.m_blackKingHasMoved;
+        m_whiteARookHasMoved = other.m_whiteARookHasMoved;
+        m_whiteHRookHasMoved = other.m_whiteHRookHasMoved;
+        m_blackARookHasMoved = other.m_blackARookHasMoved;
+        m_blackHRookHasMoved = other.m_blackHRookHasMoved;
     }
 
     ChessBoard()
@@ -257,6 +264,21 @@ struct ChessBoard {
         return kings[(int)!m_isWhitesTurn];
     }
 
+    bool* myKingHasMoved()
+    {
+        return m_isWhitesTurn ? &m_whiteKingHasMoved : &m_blackKingHasMoved;
+    }
+
+    bool* myARookHasMoved()
+    {
+        return m_isWhitesTurn ? &m_whiteARookHasMoved : &m_blackARookHasMoved;
+    }
+
+    bool* myHRookHasMoved()
+    {
+        return m_isWhitesTurn ? &m_whiteHRookHasMoved : &m_blackHRookHasMoved;
+    }
+
     uint64_t allWhitePieces() const
     {
         return  whitePawnsBoard |
@@ -330,8 +352,8 @@ class Chess {
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
         void evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score);
 
-        double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
-        double minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta);
+        double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
+        double minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
 
         void generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t, uint64_t)>);
 

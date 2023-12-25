@@ -1146,7 +1146,7 @@ void Chess::getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<C
 
 
 
-double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
+double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta)
 {
 
     npos++;
@@ -1238,7 +1238,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     ChessMove m;
 
-    int npos = 0;
+    uint64_t npos = 0;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
@@ -1246,7 +1246,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     
-    printf("Number of positions: %d (%1.3f secs) = %1.3f KNps\n", npos, msecs.count() / 1'000'000.0, npos / 1000.0 / (msecs.count() / 1'000'000.0));
+    printf("Number of positions: %ld (%1.3f secs) = %1.3f KNps\n", npos, msecs.count() / 1'000'000.0, npos / 1000.0 / (msecs.count() / 1'000'000.0));
     printf("check test: %1.3f eval: %1.3f gen: %1.3f gen2: %1.3f \n", m_totalCheckTestMicroseconds / 1'000'000.0, 
                 m_totalEvaluateMicroseconds / 1'000'000.0, m_totalGenerateMoveMicroseconds / 1'000'000.0, 
                 m_totalGenLegalMicroseconds / 1'000'000.0); 
@@ -1547,7 +1547,7 @@ void Chess::computeBlockersAndBeyond()
 
 }
 
-double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, int& npos, double alpha, double beta)
+double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta)
 {
     bool isRoot = npos == 0;
 
@@ -1572,7 +1572,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
 
     if (maximizing)
     {
-        double score = -INFINITY;
+        bool betaCutoff = false;
 
         generateMovesFast(board,
                 [&] (ChessBoard& b, uint64_t from, uint64_t to) 
@@ -1580,24 +1580,29 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     ChessMove mm;            
     
                     double newscore = minimaxAlphaBetaFaster(b, white, mm, false, depth - 1, npos, alpha, beta); 
-                    if (newscore > score)
+                    
+                    if (newscore >= beta)
+                    {    
+                        betaCutoff = true;
+                        return true; 
+                    }
+                    if (newscore > alpha)
                     {
-                        score = newscore;
+                        alpha = newscore;
 
                         if (isRoot)
                             moveFromBitboards(move, from, to); 
                     }
-                    alpha = std::max(alpha, newscore);
-                    if (newscore >= beta)
-                        return true; 
+
                     return false;
                 });
 
-        return score;
+        if (betaCutoff) return beta;
+        return alpha;
     }
     else
     {
-        double score = INFINITY;
+        bool alphaCutoff = false;
 
         generateMovesFast(board, 
                 [&] (ChessBoard& b, uint64_t from, uint64_t to) 
@@ -1605,19 +1610,22 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     ChessMove mm;            
     
                     double newscore = minimaxAlphaBetaFaster(b, white, mm, true, depth - 1, npos, alpha, beta); 
-                    if (newscore < score)
+                    if (newscore <= alpha)
                     {
-                        score = newscore;
+                        alphaCutoff = true;
+                        return true;
+                    }
+                    if (newscore < beta)
+                    {
+                        beta = newscore;
                         if (isRoot) // root
                             moveFromBitboards(move, from, to); 
                     }
-                    beta = std::min(beta, newscore);
-                    if (newscore <= alpha)
-                        return true;
+                    
                     return false; 
                 });
-
-        return score;
+        if (alphaCutoff) return alpha;
+        return beta;
     }
 
     return 0.0;
@@ -1632,7 +1640,8 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     uint64_t *myPawnAttacks;
     uint64_t *myPawnMoves;
     uint64_t enPassentSq;
-
+    uint64_t kingMoveSquares = 0;
+        
     if (board.m_isWhitesTurn)
     {
         myPieces     = board.allWhitePieces();
@@ -1641,7 +1650,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         myPawnMoves     = m_pawnMovesWhite;
         myPawnAttacks   = m_pawnAttacksWhite;
         if (board.m_can_en_passant_file != INVALID_FILE)
-            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, THIRD_RANK);
+            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, SIXTH_RANK);
         else
             enPassentSq     = 0;
     }
@@ -1654,7 +1663,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         myPawnAttacks   = m_pawnAttacksBlack;
 
         if (board.m_can_en_passant_file != INVALID_FILE)
-            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, SIXTH_RANK);
+            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, THIRD_RANK);
         else
             enPassentSq     = 0;
  
@@ -1787,8 +1796,11 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
             *newb.myRooks() = (*newb.myRooks() & ~rook) | mm;
             newb.clearOppPieces(mm);
+            if ((rookSq & 7) == A_FILE) *newb.myARookHasMoved() = true;
+            else if ((rookSq & 7) == H_FILE) *newb.myHRookHasMoved() = true;
              
             newb.nextTurn();
+
 
             if (func(newb, rook, mm)) goto done;
 
@@ -1837,11 +1849,13 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         {
             uint64_t mm = moves & -moves;
 
+            kingMoveSquares |= mm;
+
             ChessBoard newb(board);
 
             *newb.myKings() = (*newb.myKings() & ~king) | mm;
             newb.clearOppPieces(mm);
-             
+            *newb.myKingHasMoved() = true;
             newb.nextTurn();
 
             if (func(newb, king, mm)) goto done;
@@ -1850,6 +1864,82 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
     }
 
+    // Castling
+
+    if ((board.m_isWhitesTurn) && (!board.m_whiteKingHasMoved) && !kingIsInCheck(board, true))
+    {
+
+        // Check King side castling
+        if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
+            !board.m_whiteHRookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
+                kingMoveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
+        }
+
+        // Check Queen side castling
+        if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
+            !board.m_whiteARookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
+                kingMoveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
+        }
+
+    }
+    else if ((!board.m_isWhitesTurn) && (!board.m_blackKingHasMoved) && !kingIsInCheck(board, false))
+    {
+
+        // Check King side castling
+        if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            !board.m_blackHRookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
+                kingMoveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
+        }
+
+        // Check Queen side castling
+        if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            !board.m_blackARookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
+                kingMoveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
+        }
+
+    }
+
+    if (kingMoveSquares)
+    {
+        for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
+        {
+            uint64_t king = bb & -bb;
+
+            for (; kingMoveSquares != 0; kingMoveSquares &= kingMoveSquares - 1)
+            {
+                uint64_t mm = kingMoveSquares & -kingMoveSquares;
+
+                ChessBoard newb(board);
+
+                *newb.myKings() = (*newb.myKings() & ~king) | mm;
+                if (mm == COORD_TO_BIT(G_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
+                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
+                else if (mm == COORD_TO_BIT(G_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, EIGHTH_RANK)) | COORD_TO_BIT(F_FILE, EIGHTH_RANK);
+                else if (mm == COORD_TO_BIT(C_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, EIGHTH_RANK)) | COORD_TO_BIT(D_FILE, EIGHTH_RANK);
+
+
+                *newb.myKingHasMoved() = true;
+                newb.nextTurn();
+
+                if (func(newb, king, mm)) goto done;
+
+            }
+        }
+    }
 
 done:
     return;
