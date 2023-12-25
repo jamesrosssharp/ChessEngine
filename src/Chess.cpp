@@ -778,9 +778,6 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     
     board.m_isWhitesTurn = !board.m_isWhitesTurn;
 
-    board.whitePiecesBoard = board.allWhitePieces();
-    board.blackPiecesBoard = board.allBlackPieces();
-
     // Compute legal moves for board
     if (recompute_legal)
     {
@@ -807,7 +804,7 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     
         double w, b;
 
-        evalBoard(board, w, b);
+        evalBoardFaster(board, w, b);
         printf("Scores: white = %f  black = %f\n", w, b);
     }
 
@@ -854,7 +851,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_KNIGHT, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            uint64_t moves = pieceAttacks(PIECE_KNIGHT, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -870,7 +867,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_BISHOP, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            uint64_t moves = pieceAttacks(PIECE_BISHOP, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -886,7 +883,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_ROOK, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            uint64_t moves = pieceAttacks(PIECE_ROOK, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -902,7 +899,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_QUEEN, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            uint64_t moves = pieceAttacks(PIECE_QUEEN, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -917,7 +914,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_KING, bitScanForward(bb2), board.whitePiecesBoard | board.blackPiecesBoard);
+            uint64_t moves = pieceAttacks(PIECE_KING, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -1551,14 +1548,14 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
 {
     bool isRoot = npos == 0;
 
-    npos++;
-
     if (depth == 0)
     {
         double whiteScore = 0.0;
         double blackScore = 0.0;
 
         evalBoardFaster(board, whiteScore, blackScore);
+
+        npos ++;
 
         if (white)
         {
@@ -1597,7 +1594,10 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     return false;
                 });
 
-        if (betaCutoff) return beta;
+        if (betaCutoff) 
+        {
+            return beta;
+        }
         return alpha;
     }
     else
@@ -1624,7 +1624,10 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     
                     return false; 
                 });
-        if (alphaCutoff) return alpha;
+        if (alphaCutoff) 
+        {
+            return alpha;
+        }
         return beta;
     }
 
@@ -1967,21 +1970,23 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
     black_score += sum_bits_and_multiply(board.blackQueensBoard, 9.0);
     black_score += sum_bits_and_multiply(board.blackKingsBoard, 900.0);
 
-    // Compute positional heuristics
+    // Compute positional score
 
-    white_score += 0.001*multiply_bits_with_weights_reverse(board.whitePawnsBoard,   pawnPositionWeights);
-    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteKnightsBoard, knightPositionWeights);
-    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteBishopsBoard, bishopsPositionWeights);
-    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteRooksBoard,   rooksPositionWeights);
-    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteQueensBoard,   queenPositionWeights);
-    white_score += 0.001*multiply_bits_with_weights_reverse(board.whiteKingsBoard,   kingPositionWeights);
+    constexpr double pos_mult = 0.01;
 
-    black_score += 0.001*multiply_bits_with_weights(board.blackPawnsBoard, pawnPositionWeights);
-    black_score += 0.001*multiply_bits_with_weights(board.blackKnightsBoard, knightPositionWeights);
-    black_score += 0.001*multiply_bits_with_weights(board.blackBishopsBoard, bishopsPositionWeights);
-    black_score += 0.001*multiply_bits_with_weights(board.blackRooksBoard, rooksPositionWeights);
-    black_score += 0.001*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
-    black_score += 0.001*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
+    white_score += pos_mult*multiply_bits_with_weights_reverse(board.whitePawnsBoard,   pawnPositionWeights);
+    white_score += pos_mult*multiply_bits_with_weights_reverse(board.whiteKnightsBoard, knightPositionWeights);
+    white_score += pos_mult*multiply_bits_with_weights_reverse(board.whiteBishopsBoard, bishopsPositionWeights);
+    white_score += pos_mult*multiply_bits_with_weights_reverse(board.whiteRooksBoard,   rooksPositionWeights);
+    white_score += pos_mult*multiply_bits_with_weights_reverse(board.whiteQueensBoard,   queenPositionWeights);
+    white_score += pos_mult*multiply_bits_with_weights_reverse(board.whiteKingsBoard,   kingPositionWeights);
+
+    black_score += pos_mult*multiply_bits_with_weights(board.blackPawnsBoard, pawnPositionWeights);
+    black_score += pos_mult*multiply_bits_with_weights(board.blackKnightsBoard, knightPositionWeights);
+    black_score += pos_mult*multiply_bits_with_weights(board.blackBishopsBoard, bishopsPositionWeights);
+    black_score += pos_mult*multiply_bits_with_weights(board.blackRooksBoard, rooksPositionWeights);
+    black_score += pos_mult*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
+    black_score += pos_mult*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
 
 }
 

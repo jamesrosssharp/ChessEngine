@@ -135,11 +135,6 @@ struct ChessBoard {
     uint64_t blackQueensBoard;
     uint64_t blackKingsBoard;
 
-    uint64_t whitePiecesBoard;
-    uint64_t blackPiecesBoard;
-
-    uint64_t allPiecesBoard;
-
     // Flags 
     bool m_isWhitesTurn;
     int m_can_en_passant_file;
