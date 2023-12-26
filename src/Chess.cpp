@@ -1573,6 +1573,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
     if (maximizing)
     {
         bool betaCutoff = false;
+        int nmoves = 0;
 
         generateMovesFast(board,
                 [&] (ChessBoard& b, uint64_t from, uint64_t to) 
@@ -1580,6 +1581,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     ChessMove mm;            
     
                     if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
+                    nmoves ++;
                     double newscore = minimaxAlphaBetaFaster(b, white, mm, false, depth - 1, npos, alpha, beta); 
                     
                     if (newscore >= beta)
@@ -1598,6 +1600,10 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     return false;
                 });
 
+        if (nmoves == 0)
+        {
+            return -1000.0;
+        }
         if (betaCutoff) 
         {
             return beta;
@@ -1608,12 +1614,15 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
     {
         bool alphaCutoff = false;
 
+        int nmoves = 0;
+
         generateMovesFast(board, 
                 [&] (ChessBoard& b, uint64_t from, uint64_t to) 
                 { 
                     ChessMove mm;            
     
                     if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
+                    nmoves ++;
                     double newscore = minimaxAlphaBetaFaster(b, white, mm, true, depth - 1, npos, alpha, beta); 
                     if (newscore <= alpha)
                     {
@@ -1629,6 +1638,10 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     
                     return false; 
                 });
+        if (nmoves == 0)
+        {
+            return 9000.0;
+        }
         if (alphaCutoff) 
         {
             return alpha;
@@ -1660,13 +1673,13 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         myPawnAttacks   = m_pawnAttacksWhite;
         if (board.m_can_en_passant_file != INVALID_FILE)
         {
-            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, SIXTH_RANK);
-            enPassentOriginSq     = COORD_TO_BIT(board.m_can_en_passant_file, FIFTH_RANK);
+            enPassentSq             = COORD_TO_BIT(board.m_can_en_passant_file, SIXTH_RANK);
+            enPassentOriginSq       = COORD_TO_BIT(board.m_can_en_passant_file, FIFTH_RANK);
         }
         else
         {
-            enPassentSq     = 0;
-            enPassentOriginSq = 0;
+            enPassentSq         = 0;
+            enPassentOriginSq   = 0;
         }
     }
     else
@@ -1679,13 +1692,13 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
         if (board.m_can_en_passant_file != INVALID_FILE)
         {
-            enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, THIRD_RANK);
-            enPassentOriginSq     = COORD_TO_BIT(board.m_can_en_passant_file, FOURTH_RANK);
+            enPassentSq             = COORD_TO_BIT(board.m_can_en_passant_file, THIRD_RANK);
+            enPassentOriginSq       = COORD_TO_BIT(board.m_can_en_passant_file, FOURTH_RANK);
         }
         else
         {
-            enPassentSq     = 0;
-            enPassentOriginSq = 0;
+            enPassentSq         = 0;
+            enPassentOriginSq   = 0;
         }
     }
 
@@ -1729,9 +1742,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
             {
                 kingMoveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
-            //    printf("Can castle!\n");
-            //    printBoard(board);
-            //    printf("\n");
             }  
         }
 
@@ -1744,10 +1754,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
             {
                 kingMoveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
-        
-             //   printf("Can castle!\n");
-             //   printBoard(board);
-             //   printf("\n");
             }
         }
 
@@ -1763,9 +1769,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, F_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
             {
                 kingMoveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
-              //  printf("Can castle!\n");
-              //  printBoard(board);
-              //  printf("\n");
             }
         }
 
@@ -1778,10 +1781,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
             {
                 kingMoveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
-        
-               // printf("Can castle!\n");
-               // printBoard(board);
-               // printf("\n");
             }
         }
 
@@ -1789,12 +1788,9 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
     if (kingMoveSquares)
     {
-        //printf("King move squares:\n");
-        //printBitBoard(kingMoveSquares);
         for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
         {
             uint64_t king = bb & -bb;
-            if (bb & (bb - 1)) printf("Weird king bitboard!\n");
 
             for (; kingMoveSquares != 0; kingMoveSquares &= kingMoveSquares - 1)
             {
