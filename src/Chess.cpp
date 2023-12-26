@@ -2078,7 +2078,7 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
     if (board.m_isWhitesTurn && noMoves)
     {
         if (kingIsInCheck(board, true))
-            white_score -= 900.0;
+            black_score += 9000.0;
         else 
         {
             white_score = 0.0;
@@ -2088,7 +2088,7 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
     else if (!board.m_isWhitesTurn && noMoves)
     {
         if (kingIsInCheck(board, false))
-            black_score -= 900.0;
+            white_score += 9000.0;
         else 
         {
             white_score = 0.0;
