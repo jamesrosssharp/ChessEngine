@@ -98,5 +98,16 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
     printf("Black Pawn attacks for d7\n");
     m_chess->printBitBoard(m_chess->getBlackPawnAttacks(51));
 
+    printf("Rook attacks for e8\n");
+    m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_ROOK, 60));
 }
 
+TEST_F(ChessTest, perft)
+{
+    std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();        
+        uint64_t nodes = m_chess->perft(5); 
+        printf("Perft: Nodes: %ld\n", nodes);
+    auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+    double kNPS = (double)nodes / (usecs.count() / 1'000'000.0) / 1'000.0;    
+    printf("kNPS=%1.2f\n", kNPS);
+}

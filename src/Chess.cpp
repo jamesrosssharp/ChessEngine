@@ -1576,6 +1576,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                 { 
                     ChessMove mm;            
     
+                    if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
                     double newscore = minimaxAlphaBetaFaster(b, white, mm, false, depth - 1, npos, alpha, beta); 
                     
                     if (newscore >= beta)
@@ -1609,6 +1610,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                 { 
                     ChessMove mm;            
     
+                    if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
                     double newscore = minimaxAlphaBetaFaster(b, white, mm, true, depth - 1, npos, alpha, beta); 
                     if (newscore <= alpha)
                     {
@@ -1671,6 +1673,115 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             enPassentSq     = 0;
  
     }
+
+   // King moves
+
+    for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t king = bb & -bb;
+        int kingSq = bitScanForward(king);
+        uint64_t moves = m_pieceMoves[PIECE_KING][kingSq];
+
+        moves &= ~myPieces;
+
+        for (; moves != 0; moves &= moves - 1)
+        {
+            uint64_t mm = moves & -moves;
+
+            kingMoveSquares |= mm;
+
+            ChessBoard newb(board);
+
+            *newb.myKings() = (*newb.myKings() & ~king) | mm;
+            newb.clearOppPieces(mm);
+            *newb.myKingHasMoved() = true;
+            newb.nextTurn();
+
+            if (func(newb, king, mm)) goto done;
+
+        }
+
+    }
+
+    // Castling
+
+    if ((board.m_isWhitesTurn) && (!board.m_whiteKingHasMoved) && !kingIsInCheck(board, true))
+    {
+
+        // Check King side castling
+        if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
+            !board.m_whiteHRookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
+                kingMoveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
+        }
+
+        // Check Queen side castling
+        if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
+            !board.m_whiteARookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
+                kingMoveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
+        }
+
+    }
+    else if ((!board.m_isWhitesTurn) && (!board.m_blackKingHasMoved) && !kingIsInCheck(board, false))
+    {
+
+        // Check King side castling
+        if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            !board.m_blackHRookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
+                kingMoveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
+        }
+
+        // Check Queen side castling
+        if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
+            !board.m_blackARookHasMoved)
+        {
+            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
+                kingMoveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
+        }
+
+    }
+
+    if (kingMoveSquares)
+    {
+        for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
+        {
+            uint64_t king = bb & -bb;
+
+            for (; kingMoveSquares != 0; kingMoveSquares &= kingMoveSquares - 1)
+            {
+                uint64_t mm = kingMoveSquares & -kingMoveSquares;
+
+                ChessBoard newb(board);
+
+                *newb.myKings() = (*newb.myKings() & ~king) | mm;
+                if (mm == COORD_TO_BIT(G_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
+                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
+                else if (mm == COORD_TO_BIT(G_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, EIGHTH_RANK)) | COORD_TO_BIT(F_FILE, EIGHTH_RANK);
+                else if (mm == COORD_TO_BIT(C_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, EIGHTH_RANK)) | COORD_TO_BIT(D_FILE, EIGHTH_RANK);
+
+
+                *newb.myKingHasMoved() = true;
+                newb.nextTurn();
+
+                if (func(newb, king, mm)) goto done;
+
+            }
+        }
+    }
+
+
+
 
     // Pawn moves
     for (uint64_t bb = *board.myPawns(); bb != 0; bb &= bb - 1)
@@ -1838,112 +1949,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
     }
 
-   // King moves
-
-    for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
-    {
-        uint64_t king = bb & -bb;
-        int kingSq = bitScanForward(king);
-        uint64_t moves = m_pieceMoves[PIECE_KING][kingSq];
-
-        moves &= ~myPieces;
-
-        for (; moves != 0; moves &= moves - 1)
-        {
-            uint64_t mm = moves & -moves;
-
-            kingMoveSquares |= mm;
-
-            ChessBoard newb(board);
-
-            *newb.myKings() = (*newb.myKings() & ~king) | mm;
-            newb.clearOppPieces(mm);
-            *newb.myKingHasMoved() = true;
-            newb.nextTurn();
-
-            if (func(newb, king, mm)) goto done;
-
-        }
-
-    }
-
-    // Castling
-
-    if ((board.m_isWhitesTurn) && (!board.m_whiteKingHasMoved) && !kingIsInCheck(board, true))
-    {
-
-        // Check King side castling
-        if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
-            !board.m_whiteHRookHasMoved)
-        {
-            if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
-                kingMoveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
-        }
-
-        // Check Queen side castling
-        if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
-            !board.m_whiteARookHasMoved)
-        {
-            if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
-                kingMoveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
-        }
-
-    }
-    else if ((!board.m_isWhitesTurn) && (!board.m_blackKingHasMoved) && !kingIsInCheck(board, false))
-    {
-
-        // Check King side castling
-        if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            !board.m_blackHRookHasMoved)
-        {
-            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
-                kingMoveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
-        }
-
-        // Check Queen side castling
-        if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            !board.m_blackARookHasMoved)
-        {
-            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
-                kingMoveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
-        }
-
-    }
-
-    if (kingMoveSquares)
-    {
-        for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
-        {
-            uint64_t king = bb & -bb;
-
-            for (; kingMoveSquares != 0; kingMoveSquares &= kingMoveSquares - 1)
-            {
-                uint64_t mm = kingMoveSquares & -kingMoveSquares;
-
-                ChessBoard newb(board);
-
-                *newb.myKings() = (*newb.myKings() & ~king) | mm;
-                if (mm == COORD_TO_BIT(G_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
-                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
-                else if (mm == COORD_TO_BIT(G_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, EIGHTH_RANK)) | COORD_TO_BIT(F_FILE, EIGHTH_RANK);
-                else if (mm == COORD_TO_BIT(C_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, EIGHTH_RANK)) | COORD_TO_BIT(D_FILE, EIGHTH_RANK);
-
-
-                *newb.myKingHasMoved() = true;
-                newb.nextTurn();
-
-                if (func(newb, king, mm)) goto done;
-
-            }
-        }
-    }
-
 done:
     return;
 }
@@ -1988,7 +1993,30 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
     black_score += pos_mult*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
     black_score += pos_mult*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
 
+    
 }
 
+std::uint64_t Chess::perft(int depth)
+{
+    return _perft(m_board, depth);
+}
 
+std::uint64_t Chess::_perft(ChessBoard& board, int depth)
+{
+    if (depth == 0) return 1ULL;
+    
+    uint64_t nodes = 0;
+
+    generateMovesFast(board, [&] (ChessBoard& b, uint64_t from, uint64_t to) {
+        (void)from;
+        (void)to;    
+       
+        if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
+        nodes += _perft(b, depth - 1);
+        
+        return false;
+    });
+
+    return nodes;
+}
 

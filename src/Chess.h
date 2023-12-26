@@ -342,7 +342,11 @@ class Chess {
         std::uint64_t getWhitePawnAttacks(int sq) { return m_pawnAttacksWhite[sq]; }
         std::uint64_t getBlackPawnAttacks(int sq) { return m_pawnAttacksBlack[sq]; }
 
+        std::uint64_t perft(int depth);
+
     protected:
+
+        std::uint64_t _perft(ChessBoard& board, int depth);
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
         void evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score);
