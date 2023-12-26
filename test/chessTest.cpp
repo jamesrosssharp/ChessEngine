@@ -44,6 +44,18 @@ class ChessTest : public ::testing::Test {
             delete m_chess;
         }
 
+        uint64_t RunPerft(int depth) {
+
+            std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();        
+                uint64_t nodes = m_chess->perft(depth); 
+                printf("Perft %d: Nodes: %ld\n", depth, nodes);
+            auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+            double kNPS = (double)nodes / (usecs.count() / 1'000'000.0) / 1'000.0;    
+            printf("kNPS=%1.2f\n", kNPS);
+
+            return nodes;
+        }
+
         Chess *m_chess;
 };
 
@@ -102,12 +114,12 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
     m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_ROOK, 60));
 }
 
+
+
 TEST_F(ChessTest, perft)
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();        
-        uint64_t nodes = m_chess->perft(5); 
-        printf("Perft: Nodes: %ld\n", nodes);
-    auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
-    double kNPS = (double)nodes / (usecs.count() / 1'000'000.0) / 1'000.0;    
-    printf("kNPS=%1.2f\n", kNPS);
+    ASSERT_EQ(RunPerft(1), 20);
+    ASSERT_EQ(RunPerft(2), 400);
+    ASSERT_EQ(RunPerft(3), 8902);
+    ASSERT_EQ(RunPerft(4), 197281);
 }
