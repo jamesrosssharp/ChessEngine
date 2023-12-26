@@ -351,7 +351,7 @@ class Chess {
         std::uint64_t _perftSlow(ChessBoard& board, int depth);
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
-        void evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score);
+        void evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score, bool noMoves = false);
 
         double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
         double minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);

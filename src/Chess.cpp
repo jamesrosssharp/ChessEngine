@@ -1602,7 +1602,24 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
 
         if (nmoves == 0)
         {
-            return -1000.0;
+            double whiteScore = 0.0;
+            double blackScore = 0.0;
+            double score = 0.0;
+
+            evalBoardFaster(board, whiteScore, blackScore, true);
+
+            npos++;
+
+            if (white)
+            {
+                score = whiteScore - blackScore;
+            }
+            else 
+            {
+                score = blackScore - whiteScore;
+            }
+
+            return score;
         }
         if (betaCutoff) 
         {
@@ -1640,7 +1657,24 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                 });
         if (nmoves == 0)
         {
-            return 9000.0;
+            double whiteScore = 0.0;
+            double blackScore = 0.0;
+            double score = 0.0;
+
+            evalBoardFaster(board, whiteScore, blackScore, true);
+
+            npos++;
+
+            if (white)
+            {
+                score = whiteScore - blackScore;
+            }
+            else 
+            {
+                score = blackScore - whiteScore;
+            }
+
+            return score;
         }
         if (alphaCutoff) 
         {
@@ -2001,7 +2035,7 @@ done:
     return;
 }
 
-void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score)
+void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score, bool noMoves)
 {
 
     white_score = 0.0;
@@ -2041,7 +2075,28 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
     black_score += pos_mult*multiply_bits_with_weights(board.blackQueensBoard, queenPositionWeights);
     black_score += pos_mult*multiply_bits_with_weights(board.blackKingsBoard,  kingPositionWeights);
 
-    
+    if (board.m_isWhitesTurn && noMoves)
+    {
+        if (kingIsInCheck(board, true))
+            white_score -= 900.0;
+        else 
+        {
+            white_score = 0.0;
+            black_score = 0.0;
+        }
+    } 
+    else if (!board.m_isWhitesTurn && noMoves)
+    {
+        if (kingIsInCheck(board, false))
+            black_score -= 900.0;
+        else 
+        {
+            white_score = 0.0;
+            black_score = 0.0;
+        }
+    }
+
+
 }
 
 std::uint64_t Chess::perft(int depth)
