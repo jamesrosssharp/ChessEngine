@@ -168,7 +168,7 @@ struct ChessBoard {
         blackKingsBoard   = other.blackKingsBoard;
         setUpArrays();
         m_isWhitesTurn  = other.m_isWhitesTurn;
-        m_can_en_passant_file = INVALID_FILE;
+        m_can_en_passant_file = INVALID_FILE; //other.m_can_en_passant_file;
    
         m_whiteKingHasMoved = other.m_whiteKingHasMoved;
         m_blackKingHasMoved = other.m_blackKingHasMoved;
@@ -343,10 +343,12 @@ class Chess {
         std::uint64_t getBlackPawnAttacks(int sq) { return m_pawnAttacksBlack[sq]; }
 
         std::uint64_t perft(int depth);
+        std::uint64_t perftSlow(int depth);
 
     protected:
 
         std::uint64_t _perft(ChessBoard& board, int depth);
+        std::uint64_t _perftSlow(ChessBoard& board, int depth);
 
         void evalBoard(const ChessBoard& board, double& white_score, double& black_score);
         void evalBoardFaster(const ChessBoard& board, double& white_score, double& black_score);
@@ -420,4 +422,5 @@ class Chess {
         std::uint64_t m_pawnAttacksWhite[64];
         std::uint64_t m_pawnAttacksBlack[64];
 
+        int m_nEnPassents;
 };

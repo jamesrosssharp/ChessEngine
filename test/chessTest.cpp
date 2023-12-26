@@ -51,10 +51,23 @@ class ChessTest : public ::testing::Test {
                 printf("Perft %d: Nodes: %ld\n", depth, nodes);
             auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
             double kNPS = (double)nodes / (usecs.count() / 1'000'000.0) / 1'000.0;    
+            printf("kNPS=%1.2f (%1.2f sec)\n", kNPS, usecs.count() / 1'000'000.0);
+
+            return nodes;
+        }
+
+        uint64_t RunPerftSlow(int depth) {
+
+            std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();        
+                uint64_t nodes = m_chess->perftSlow(depth); 
+                printf("Perft %d: Nodes: %ld\n", depth, nodes);
+            auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
+            double kNPS = (double)nodes / (usecs.count() / 1'000'000.0) / 1'000.0;    
             printf("kNPS=%1.2f\n", kNPS);
 
             return nodes;
         }
+
 
         Chess *m_chess;
 };
@@ -122,4 +135,18 @@ TEST_F(ChessTest, perft)
     ASSERT_EQ(RunPerft(2), 400);
     ASSERT_EQ(RunPerft(3), 8902);
     ASSERT_EQ(RunPerft(4), 197281);
+    ASSERT_EQ(RunPerft(5), 4'865'609);
+    ASSERT_EQ(RunPerft(6), 119'060'324);
+    ASSERT_EQ(RunPerft(7), 3'195'901'860 );
+}
+
+TEST_F(ChessTest, perftSlow)
+{
+    ASSERT_EQ(RunPerftSlow(1), 20);
+    ASSERT_EQ(RunPerftSlow(2), 400);
+    ASSERT_EQ(RunPerftSlow(3), 8902);
+    ASSERT_EQ(RunPerftSlow(4), 197281);
+   // Too slow...
+   // ASSERT_EQ(RunPerftSlow(5), 4'865'609);
+   // ASSERT_EQ(RunPerftSlow(6), 119'060'324);
 }

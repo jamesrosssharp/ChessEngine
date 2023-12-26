@@ -150,6 +150,9 @@ void Chess::resetBoard()
     m_board.m_whiteHRookHasMoved = false;
     m_board.m_blackARookHasMoved = false;
     m_board.m_blackHRookHasMoved = false;
+
+    m_board.m_legalMoves.clear();
+    getLegalMovesForBoardAsVector(m_board, m_board.m_legalMoves);
 }
 
 void Chess::getLegalMovesForSquare(int x, int y, uint64_t &moveSquares)
@@ -1645,6 +1648,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     uint64_t *myPawnAttacks;
     uint64_t *myPawnMoves;
     uint64_t enPassentSq;
+    uint64_t enPassentOriginSq;
     uint64_t kingMoveSquares = 0;
         
     if (board.m_isWhitesTurn)
@@ -1655,9 +1659,15 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         myPawnMoves     = m_pawnMovesWhite;
         myPawnAttacks   = m_pawnAttacksWhite;
         if (board.m_can_en_passant_file != INVALID_FILE)
+        {
             enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, SIXTH_RANK);
+            enPassentOriginSq     = COORD_TO_BIT(board.m_can_en_passant_file, FIFTH_RANK);
+        }
         else
+        {
             enPassentSq     = 0;
+            enPassentOriginSq = 0;
+        }
     }
     else
     {
@@ -1668,10 +1678,15 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         myPawnAttacks   = m_pawnAttacksBlack;
 
         if (board.m_can_en_passant_file != INVALID_FILE)
+        {
             enPassentSq     = COORD_TO_BIT(board.m_can_en_passant_file, THIRD_RANK);
+            enPassentOriginSq     = COORD_TO_BIT(board.m_can_en_passant_file, FOURTH_RANK);
+        }
         else
+        {
             enPassentSq     = 0;
- 
+            enPassentOriginSq = 0;
+        }
     }
 
    // King moves
@@ -1687,8 +1702,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         for (; moves != 0; moves &= moves - 1)
         {
             uint64_t mm = moves & -moves;
-
-            kingMoveSquares |= mm;
 
             ChessBoard newb(board);
 
@@ -1714,7 +1727,12 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             !board.m_whiteHRookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
+            {
                 kingMoveSquares |= COORD_TO_BIT(G_FILE, FIRST_RANK); 
+            //    printf("Can castle!\n");
+            //    printBoard(board);
+            //    printf("\n");
+            }  
         }
 
         // Check Queen side castling
@@ -1724,7 +1742,13 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             !board.m_whiteARookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
+            {
                 kingMoveSquares |= COORD_TO_BIT(C_FILE, FIRST_RANK);
+        
+             //   printf("Can castle!\n");
+             //   printBoard(board);
+             //   printf("\n");
+            }
         }
 
     }
@@ -1736,8 +1760,13 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
             !board.m_blackHRookHasMoved)
         {
-            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
+            if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, F_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
+            {
                 kingMoveSquares |= COORD_TO_BIT(G_FILE, EIGHTH_RANK); 
+              //  printf("Can castle!\n");
+              //  printBoard(board);
+              //  printf("\n");
+            }
         }
 
         // Check Queen side castling
@@ -1747,16 +1776,25 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             !board.m_blackARookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
+            {
                 kingMoveSquares |= COORD_TO_BIT(C_FILE, EIGHTH_RANK); 
+        
+               // printf("Can castle!\n");
+               // printBoard(board);
+               // printf("\n");
+            }
         }
 
     }
 
     if (kingMoveSquares)
     {
+        //printf("King move squares:\n");
+        //printBitBoard(kingMoveSquares);
         for (uint64_t bb = *board.myKings(); bb != 0; bb &= bb - 1)
         {
             uint64_t king = bb & -bb;
+            if (bb & (bb - 1)) printf("Weird king bitboard!\n");
 
             for (; kingMoveSquares != 0; kingMoveSquares &= kingMoveSquares - 1)
             {
@@ -1765,13 +1803,13 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
                 ChessBoard newb(board);
 
                 *newb.myKings() = (*newb.myKings() & ~king) | mm;
-                if (mm == COORD_TO_BIT(G_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
-                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
+                if      (mm == COORD_TO_BIT(G_FILE, FIRST_RANK))  *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
+                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK))  *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
                 else if (mm == COORD_TO_BIT(G_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, EIGHTH_RANK)) | COORD_TO_BIT(F_FILE, EIGHTH_RANK);
                 else if (mm == COORD_TO_BIT(C_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, EIGHTH_RANK)) | COORD_TO_BIT(D_FILE, EIGHTH_RANK);
 
-
                 *newb.myKingHasMoved() = true;
+
                 newb.nextTurn();
 
                 if (func(newb, king, mm)) goto done;
@@ -1779,9 +1817,6 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             }
         }
     }
-
-
-
 
     // Pawn moves
     for (uint64_t bb = *board.myPawns(); bb != 0; bb &= bb - 1)
@@ -1805,8 +1840,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
             int newPawnSq = bitScanForward(mm);
 
-            if (abs(newPawnSq - pawnSq) > 8) newb.m_can_en_passant_file = pawn & 7;
-            else newb.m_can_en_passant_file = INVALID_FILE;
+            if (abs(newPawnSq - pawnSq) == 16) newb.m_can_en_passant_file = pawnSq & 7;
 
             *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
             newb.nextTurn();
@@ -1818,7 +1852,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         // Pawn captures
         m = myPawnAttacks[pawnSq];
 
-        m &= (oppPieces | enPassentSq);
+        m &= oppPieces;
 
         for (; m != 0; m &= (m-1))
         {
@@ -1828,13 +1862,31 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
             *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
             newb.clearOppPieces(mm);
-             
+
             newb.nextTurn();
 
             if (func(newb, pawn, mm)) goto done;
         }
 
+        // En passents 
 
+        m = myPawnAttacks[pawnSq];
+
+        m &= enPassentSq;
+
+        if (m)
+        {
+            ChessBoard newb(board);
+
+            m_nEnPassents ++;
+
+            *newb.myPawns() = (*newb.myPawns() & ~pawn) | m;
+            newb.clearOppPieces(enPassentOriginSq);
+
+            newb.nextTurn();
+
+            if (func(newb, pawn, m)) goto done;
+        }
     }    
 
 
@@ -1998,7 +2050,10 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
 
 std::uint64_t Chess::perft(int depth)
 {
-    return _perft(m_board, depth);
+    m_nEnPassents = 0;
+    uint64_t nodes = _perft(m_board, depth);
+    printf("En passents: %d\n", m_nEnPassents);
+    return nodes;
 }
 
 std::uint64_t Chess::_perft(ChessBoard& board, int depth)
@@ -2016,6 +2071,34 @@ std::uint64_t Chess::_perft(ChessBoard& board, int depth)
         
         return false;
     });
+
+    return nodes;
+}
+
+std::uint64_t Chess::perftSlow(int depth)
+{
+    return _perftSlow(m_board, depth);
+}
+
+std::uint64_t Chess::_perftSlow(ChessBoard& board, int depth)
+{
+    if (depth == 0) return 1ULL;
+    
+    uint64_t nodes = 0;
+
+    for (auto &m : board.m_legalMoves)
+    {
+        ChessBoard b = board;
+
+        bool ep;
+        bool castle_kings_side;
+        bool castle_queens_side;
+
+        makeMoveForBoard(b, m.x1, m.y1, m.x2, m.y2, ep, castle_kings_side, castle_queens_side, false, true);
+
+        nodes += _perftSlow(b, depth - 1);
+
+    }    
 
     return nodes;
 }
