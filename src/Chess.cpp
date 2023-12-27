@@ -2555,7 +2555,9 @@ void Chess::printPrettyMove(const ChessBoard& board, const ChessMove& move)
             switch (piece2)
             {
                 case NO_PIECE:
-                    printf("K%c%c", files[move.x2], ranks[move.y2]);
+                    if (move.x1 == E_FILE && move.x2 == G_FILE) printf("0-0");
+                    else if (move.x1 == E_FILE && move.x2 == C_FILE) printf("0-0-0");
+                    else printf("K%c%c", files[move.x2], ranks[move.y2]);
                     break;
                 default:
                     printf("Kx%c%c", files[move.x2], ranks[move.y2]);
@@ -2583,6 +2585,8 @@ void Chess::printPrettyMove(const ChessBoard& board, const ChessMove& move)
         default:
             break;
     }
+    
+    // Check for castling
 
     // Determine if this move is a check or a checkmate
 
