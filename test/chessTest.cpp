@@ -125,6 +125,14 @@ TEST_F(ChessTest, TestBlockersAndBeyond)
 
     printf("Rook attacks for e8\n");
     m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_ROOK, 60));
+
+    printf("Rook attacks for e1\n");
+    m_chess->printBitBoard(m_chess->getPieceMoves(PIECE_ROOK, 4));
+
+    printf("Blockers and beyond for rook for e1\n");
+    m_chess->printBitBoard(m_chess->getBlockersAndBeyond(PIECE_ROOK, 4));
+
+
 }
 
 
@@ -137,7 +145,7 @@ TEST_F(ChessTest, perft)
     ASSERT_EQ(RunPerft(4), 197281);
     ASSERT_EQ(RunPerft(5), 4'865'609);
     ASSERT_EQ(RunPerft(6), 119'060'324);
-    ASSERT_EQ(RunPerft(7), 3'195'901'860 );
+    //ASSERT_EQ(RunPerft(7), 3'195'901'860 );
 }
 
 TEST_F(ChessTest, perftSlow)

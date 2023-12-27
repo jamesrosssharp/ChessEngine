@@ -89,10 +89,28 @@ enum Ranks {
     INVALID_RANK = -1
 };
 
+enum MoveType {
+    BASIC_MOVE = 0,
+    CAPTURE    = 1,
+    EN_PASSENT = 2,
+    CASTLE_KING_SIDE = 3,
+    CASTLE_QUEEN_SIDE = 4,
+    PROMOTE_TO_QUEEN = 5,
+    PROMOTE_TO_ROOK  = 6,
+    PROMOTE_TO_BISHOP = 7,
+    PROMOTE_TO_KNIGHT = 8
+};
+
 #define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
 #define IS_IN_BOARD(file, rank) ((file >= A_FILE) && (file <= H_FILE) && (rank >= FIRST_RANK) && (rank <= EIGHTH_RANK))
 
-
+enum PromotionType {
+    NO_PROMOTION,
+    PROMOTION_PROMOTE_TO_QUEEN,
+    PROMOTION_PROMOTE_TO_ROOK,
+    PROMOTION_PROMOTE_TO_BISHOP,
+    PROMOTION_PROMOTE_TO_KNIGHT
+};
 
 struct ChessMove {
 
@@ -100,7 +118,8 @@ struct ChessMove {
         x1(INVALID_FILE),
         y1(INVALID_RANK),
         x2(INVALID_FILE),
-        y2(INVALID_RANK)
+        y2(INVALID_RANK),
+        promote(NO_PROMOTION)
     {
 
     }
@@ -109,13 +128,16 @@ struct ChessMove {
         x1(_x1),
         y1(_y1),
         x2(_x2),
-        y2(_y2)
+        y2(_y2),
+        promote(NO_PROMOTION)
     {
 
     }
 
     int x1, y1;
     int x2, y2;
+
+    enum PromotionType promote;
 };
 
 struct ChessBoard {
@@ -327,9 +349,10 @@ class Chess {
         void printBoard(const ChessBoard& board);
 
         void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
-        void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print = true, bool recompute_legal = false);
+        void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, 
+                              bool print = true, bool recompute_legal = false, PromotionType promote = NO_PROMOTION);
 
-        void getBestMove(int& x1, int& y1, int& x2, int& y2); 
+        void getBestMove(int& x1, int& y1, int& x2, int& y2, enum PromotionType& promote); 
 
         void getLegalMovesForBoardAsVector(const ChessBoard& board, std::vector<ChessMove>& vec);
         void getLegalMovesForBoardAsVectorSlow(const ChessBoard& board, std::vector<ChessMove>& vec);
@@ -356,7 +379,7 @@ class Chess {
         double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
         double minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
 
-        void generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t, uint64_t)>);
+        void generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t, uint64_t, enum MoveType type)>);
 
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
         
@@ -373,6 +396,8 @@ class Chess {
         double sum_bits_and_multiply(uint64_t bb, double multiplier);
         double multiply_bits_with_weights(uint64_t bb, const double* weights);
         double multiply_bits_with_weights_reverse(uint64_t bb, const double* weights);
+
+        void printPrettyMove(const ChessBoard& board, const ChessMove& move);
 
         static int bitScanForward(uint64_t bb)
         {
@@ -394,7 +419,7 @@ class Chess {
             return moves;
         }
 
-        void moveFromBitboards(ChessMove& move, uint64_t from, uint64_t to)
+        void moveFromBitboards(ChessMove& move, uint64_t from, uint64_t to, enum MoveType type)
         {
             int fromSq = bitScanForward(from);
             int toSq   = bitScanForward(to);
@@ -403,7 +428,26 @@ class Chess {
             move.y1 = fromSq >> 3;
             move.x2 = toSq & 7;
             move.y2 = toSq >> 3;
-                
+               
+            switch (type)
+            {
+                case PROMOTE_TO_QUEEN:
+                    move.promote = PROMOTION_PROMOTE_TO_QUEEN;
+                    break;
+                case PROMOTE_TO_BISHOP:
+                    move.promote = PROMOTION_PROMOTE_TO_BISHOP;
+                    break;
+                case PROMOTE_TO_KNIGHT:
+                    move.promote = PROMOTION_PROMOTE_TO_KNIGHT;
+                    break;
+                case PROMOTE_TO_ROOK:
+                    move.promote = PROMOTION_PROMOTE_TO_ROOK;
+                    break;
+                default:
+                    move.promote = NO_PROMOTION;
+                    break; 
+            }
+
         } 
 
         ChessBoard m_board;

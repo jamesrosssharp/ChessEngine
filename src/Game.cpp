@@ -91,12 +91,37 @@ void Game::chessThread()
         
         int x1,y1,x2,y2;
         bool ep, castle_kings_side, castle_queens_side;
+        enum PromotionType promote;
 
-        m_ch.getBestMove(x1, y1, x2, y2);
+        m_ch.getBestMove(x1, y1, x2, y2, promote);
 
         m_ch.makeMove(x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side);
         m_r.movePiece(x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side);
-            
+         
+        while (m_r.animating())
+            usleep(10000);
+        
+        if (promote != NO_PROMOTION)
+        {
+            switch (promote)
+            {
+                case PROMOTION_PROMOTE_TO_QUEEN:
+                    m_r.promoteToQueen(x2, y2);
+                    break;
+                case PROMOTION_PROMOTE_TO_ROOK:
+                    m_r.promoteToRook(x2, y2);
+                    break;
+                case PROMOTION_PROMOTE_TO_BISHOP:
+                    m_r.promoteToBishop(x2, y2);
+                    break;
+                case PROMOTION_PROMOTE_TO_KNIGHT:
+                    m_r.promoteToKnight(x2, y2);
+                    break;    
+                default:
+                    break;
+            }
+        }
+   
         m_u.unlock(); 
     }
 }

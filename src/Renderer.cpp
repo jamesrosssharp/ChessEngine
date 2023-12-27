@@ -595,3 +595,82 @@ void Renderer::movePiece(int x1, int y1, int x2, int y2, bool ep, bool castle_ki
     }
 }
 
+void Renderer::promoteToQueen(int x, int y)
+{
+    RenderSprite* piece = nullptr;
+
+    for (int i = 0; i < kNChessmen; i++)
+    {
+        piece = &m_chessmen_white[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = &m_chessmen_black[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = nullptr;
+    }
+
+    if (piece != nullptr)
+    {
+        piece->sprite_type = TYPE_QUEEN; 
+    }
+}
+
+void Renderer::promoteToRook(int x, int y)
+{
+    RenderSprite* piece = nullptr;
+
+    for (int i = 0; i < kNChessmen; i++)
+    {
+        piece = &m_chessmen_white[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = &m_chessmen_black[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = nullptr;
+    }
+
+    if (piece != nullptr)
+    {
+        piece->sprite_type = TYPE_ROOK; 
+    }
+
+}
+
+void Renderer::promoteToBishop(int x, int y)
+{
+     RenderSprite* piece = nullptr;
+
+    for (int i = 0; i < kNChessmen; i++)
+    {
+        piece = &m_chessmen_white[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = &m_chessmen_black[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = nullptr;
+    }
+
+    if (piece != nullptr)
+    {
+        piece->sprite_type = TYPE_BISHOP; 
+    }
+
+}
+
+void Renderer::promoteToKnight(int x, int y)
+{
+    RenderSprite* piece = nullptr;
+
+    for (int i = 0; i < kNChessmen; i++)
+    {
+        piece = &m_chessmen_white[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = &m_chessmen_black[i];
+        if ((piece->grid_x == x) && (piece->grid_y == y) && piece->visible) break;
+        piece = nullptr;
+    }
+
+    if (piece != nullptr)
+    {
+        piece->sprite_type = TYPE_KNIGHT; 
+    }
+
+}
+

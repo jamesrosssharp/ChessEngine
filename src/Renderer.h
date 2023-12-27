@@ -80,6 +80,12 @@ class Renderer {
 
         bool animating() { return m_animating; }
 
+        void promoteToQueen(int x, int y);
+        void promoteToRook(int x, int y);
+        void promoteToBishop(int x, int y);
+        void promoteToKnight(int x, int y);
+
+
     private:
 
         void renderSprite(struct RenderSprite* sp, bool white);

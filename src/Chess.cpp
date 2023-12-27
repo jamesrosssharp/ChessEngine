@@ -750,8 +750,16 @@ void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_king
 }
 
 
-void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, bool print, bool recompute_legal)
+void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, 
+                             bool& castle_queens_side, bool print, bool recompute_legal, enum PromotionType promote)
 {
+
+    if (print)
+    {
+        printf("Making move: ");
+        printPrettyMove(board, ChessMove(x1, y1, x2, y2));
+        printf("\n");
+    }
 
     ep = false;
     castle_kings_side = false;
@@ -787,7 +795,7 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
     else
         board.m_can_en_passant_file = INVALID_FILE;
 
-    // If this piece is a king, flag that the king has moved
+     // If this piece is a king, flag that the king has moved
     if (start_piece == WHITE_KING)
         board.m_whiteKingHasMoved = true;
     else if (start_piece == BLACK_KING)
@@ -849,9 +857,55 @@ void Chess::makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, 
         }
 
     }
-
+   // If this piece is a pawn, and it will promote, check the promotion flags
+    
     removePieceFromSquare(board, start_piece, x1, y1);
-    addPieceToSquare(board, start_piece, x2, y2);
+    if ((start_piece == WHITE_PAWN) && (y2 == EIGHTH_RANK))
+    {
+        switch (promote)
+        {
+            case PROMOTION_PROMOTE_TO_BISHOP:
+                addPieceToSquare(board, WHITE_BISHOP, x2, y2);
+                break;
+            case PROMOTION_PROMOTE_TO_KNIGHT:
+                addPieceToSquare(board, WHITE_KNIGHT, x2, y2);
+                break;
+            case PROMOTION_PROMOTE_TO_ROOK:
+                addPieceToSquare(board, WHITE_ROOK, x2, y2);
+                break;
+            case PROMOTION_PROMOTE_TO_QUEEN:
+            default:
+                addPieceToSquare(board, WHITE_QUEEN, x2, y2);
+                break;
+            
+        }
+
+    }
+    else if ((start_piece == BLACK_PAWN) && (y2 == FIRST_RANK))
+    {
+        switch (promote)
+        {
+            case PROMOTION_PROMOTE_TO_BISHOP:
+                addPieceToSquare(board, BLACK_BISHOP, x2, y2);
+                break;
+            case PROMOTION_PROMOTE_TO_KNIGHT:
+                addPieceToSquare(board, BLACK_KNIGHT, x2, y2);
+                break;
+            case PROMOTION_PROMOTE_TO_ROOK:
+                addPieceToSquare(board, BLACK_ROOK, x2, y2);
+                break;
+            case PROMOTION_PROMOTE_TO_QUEEN:
+            default:
+                addPieceToSquare(board, BLACK_QUEEN, x2, y2);
+                break;
+            
+        }
+    }
+    else
+    {
+        addPieceToSquare(board, start_piece, x2, y2);
+    }
+
     
     board.m_isWhitesTurn = !board.m_isWhitesTurn;
 
@@ -1352,7 +1406,7 @@ double Chess::minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& m
 
 
 
-void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
+void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2, enum PromotionType& promote)
 {
 
     ChessMove m;
@@ -1376,22 +1430,20 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2)
     m_totalGenLegalMicroseconds     = 0;
 
     printf("Max score: %f\n", maxScore);
-    printf("Best move is: %d,%d->%d,%d\n", m.x1, m.y1, m.x2, m.y2);
+    printf("Best move is: ");
+    printPrettyMove(m_board, m);
+    printf("\n");
 
     x1 = m.x1;
     x2 = m.x2;
     y1 = m.y1;
     y2 = m.y2;
+    promote = m.promote;
 
 }
 
 void Chess::computeBlockersAndBeyond()
 {
-/*        std::uint64_t m_pieceMoves[6][64];
-        std::uint64_t m_arrBlockersAndBeyond[6][64];
-        std::uint64_t m_arrBehind[64][64];
-*/
-
     // Compute piece moves and occupancy mask
 
     // Pawns - set to zero
@@ -1451,11 +1503,6 @@ void Chess::computeBlockersAndBeyond()
 
     }
  
-
-    //std::uint64_t m_pawnMovesBlack[64];
-    //std::uint64_t m_pawnAttacksBlack[64];
-
-
     // Knights
 
     for (int sq = 0; sq < 64; sq++)
@@ -1540,8 +1587,7 @@ void Chess::computeBlockersAndBeyond()
 
     }
 
-  // Queens
-
+    // Queens
     for (int sq = 0; sq < 64; sq++)
     {
         int x1 = sq & 7;
@@ -1695,7 +1741,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
         int nmoves = 0;
 
         generateMovesFast(board,
-                [&] (ChessBoard& b, uint64_t from, uint64_t to) 
+                [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type) 
                 { 
                     ChessMove mm;            
     
@@ -1713,7 +1759,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                         alpha = newscore;
 
                         if (isRoot)
-                            moveFromBitboards(move, from, to); 
+                            moveFromBitboards(move, from, to, type); 
                     }
 
                     return false;
@@ -1753,8 +1799,8 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
         int nmoves = 0;
 
         generateMovesFast(board, 
-                [&] (ChessBoard& b, uint64_t from, uint64_t to) 
-                { 
+                [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type) 
+                {
                     ChessMove mm;            
     
                     if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
@@ -1769,7 +1815,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     {
                         beta = newscore;
                         if (isRoot) // root
-                            moveFromBitboards(move, from, to); 
+                            moveFromBitboards(move, from, to, type); 
                     }
                     
                     return false; 
@@ -1805,7 +1851,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
     return 0.0;
 }
 
-void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t from_bb, uint64_t to_bb)> func)
+void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t from_bb, uint64_t to_bb, enum MoveType type)> func)
 {
 
     uint64_t myPieces  = 0;
@@ -1816,7 +1862,8 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     uint64_t enPassentSq;
     uint64_t enPassentOriginSq;
     uint64_t kingMoveSquares = 0;
-        
+    uint64_t promoteBitmask = 0;    
+
     if (board.m_isWhitesTurn)
     {
         myPieces     = board.allWhitePieces();
@@ -1834,6 +1881,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             enPassentSq         = 0;
             enPassentOriginSq   = 0;
         }
+        promoteBitmask = 0xff00'0000'0000'0000;    
     }
     else
     {
@@ -1853,6 +1901,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             enPassentSq         = 0;
             enPassentOriginSq   = 0;
         }
+        promoteBitmask = 0x0000'0000'0000'00ff;    
     }
 
    // King moves
@@ -1876,7 +1925,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             *newb.myKingHasMoved() = true;
             newb.nextTurn();
 
-            if (func(newb, king, mm)) goto done;
+            if (func(newb, king, mm, mm & oppPieces ? CAPTURE : BASIC_MOVE)) goto done;
 
         }
 
@@ -1950,18 +1999,35 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
                 uint64_t mm = kingMoveSquares & -kingMoveSquares;
 
                 ChessBoard newb(board);
+                enum MoveType type = BASIC_MOVE;
 
                 *newb.myKings() = (*newb.myKings() & ~king) | mm;
-                if      (mm == COORD_TO_BIT(G_FILE, FIRST_RANK))  *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
-                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK))  *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
-                else if (mm == COORD_TO_BIT(G_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, EIGHTH_RANK)) | COORD_TO_BIT(F_FILE, EIGHTH_RANK);
-                else if (mm == COORD_TO_BIT(C_FILE, EIGHTH_RANK)) *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, EIGHTH_RANK)) | COORD_TO_BIT(D_FILE, EIGHTH_RANK);
+                if      (mm == COORD_TO_BIT(G_FILE, FIRST_RANK))
+                {
+                    *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, FIRST_RANK)) | COORD_TO_BIT(F_FILE, FIRST_RANK);
+                    type = CASTLE_KING_SIDE;
+                }
+                else if (mm == COORD_TO_BIT(C_FILE, FIRST_RANK))
+                {
+                    *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, FIRST_RANK)) | COORD_TO_BIT(D_FILE, FIRST_RANK);
+                    type = CASTLE_QUEEN_SIDE;
+                }
+                else if (mm == COORD_TO_BIT(G_FILE, EIGHTH_RANK))
+                {
+                    *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(H_FILE, EIGHTH_RANK)) | COORD_TO_BIT(F_FILE, EIGHTH_RANK);
+                    type = CASTLE_KING_SIDE;
+                }
+                else if (mm == COORD_TO_BIT(C_FILE, EIGHTH_RANK))
+                {
+                    *newb.myRooks() = (*newb.myRooks() & ~COORD_TO_BIT(A_FILE, EIGHTH_RANK)) | COORD_TO_BIT(D_FILE, EIGHTH_RANK);
+                    type = CASTLE_QUEEN_SIDE;
+                }  
 
                 *newb.myKingHasMoved() = true;
 
                 newb.nextTurn();
 
-                if (func(newb, king, mm)) goto done;
+                if (func(newb, king, mm, type)) goto done;
 
             }
         }
@@ -1985,17 +2051,73 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         for (; m != 0; m &= (m-1))
         {
             uint64_t mm = m & -m;
-            ChessBoard newb(board);
+            if (mm & promoteBitmask)
+            {
+                // Generate promote to queen
+                {
+                    ChessBoard newb(board);
 
-            int newPawnSq = bitScanForward(mm);
+                    *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+                    *newb.myQueens() = *newb.myQueens() | mm;
+                    newb.nextTurn();
 
-            if (abs(newPawnSq - pawnSq) == 16) newb.m_can_en_passant_file = pawnSq & 7;
+                    if (func(newb, pawn, mm, PROMOTE_TO_QUEEN)) goto done;
 
-            *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
-            newb.nextTurn();
+                }
 
-            if (func(newb, pawn, mm)) goto done;
+                // Generate promote to rook
 
+                {
+                    ChessBoard newb(board);
+
+                    *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+                    *newb.myRooks() = *newb.myRooks() | mm;
+                    newb.nextTurn();
+
+                    if (func(newb, pawn, mm, PROMOTE_TO_ROOK)) goto done;
+
+                }
+
+                // Generate promote to bishop
+
+                {
+                    ChessBoard newb(board);
+
+                    *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+                    *newb.myBishops() = *newb.myBishops() | mm;
+                    newb.nextTurn();
+
+                    if (func(newb, pawn, mm, PROMOTE_TO_BISHOP)) goto done;
+
+                }
+
+                // Generate promote to knight
+
+                {
+                    ChessBoard newb(board);
+
+                    *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+                    *newb.myKnights() = *newb.myKnights() | mm;
+                    newb.nextTurn();
+
+                    if (func(newb, pawn, mm, PROMOTE_TO_KNIGHT)) goto done;
+
+                }
+
+            }
+            else
+            {
+                ChessBoard newb(board);
+
+                int newPawnSq = bitScanForward(mm);
+
+                if (abs(newPawnSq - pawnSq) == 16) newb.m_can_en_passant_file = pawnSq & 7;
+
+                *newb.myPawns() = (*newb.myPawns() & ~pawn) | mm;
+                newb.nextTurn();
+
+                if (func(newb, pawn, mm, BASIC_MOVE)) goto done;
+            }
         }
 
         // Pawn captures
@@ -2014,7 +2136,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
 
             newb.nextTurn();
 
-            if (func(newb, pawn, mm)) goto done;
+            if (func(newb, pawn, mm, CAPTURE)) goto done;
         }
 
         // En passents 
@@ -2027,14 +2149,12 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         {
             ChessBoard newb(board);
 
-            m_nEnPassents ++;
-
             *newb.myPawns() = (*newb.myPawns() & ~pawn) | m;
             newb.clearOppPieces(enPassentOriginSq);
 
             newb.nextTurn();
 
-            if (func(newb, pawn, m)) goto done;
+            if (func(newb, pawn, m, EN_PASSENT)) goto done;
         }
     }    
 
@@ -2060,7 +2180,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
              
             newb.nextTurn();
 
-            if (func(newb, knight, mm)) goto done;
+            if (func(newb, knight, mm, mm & oppPieces ? CAPTURE : BASIC_MOVE)) goto done;
 
         }
 
@@ -2087,7 +2207,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
              
             newb.nextTurn();
 
-            if (func(newb, bishop, mm)) goto done;
+            if (func(newb, bishop, mm, mm & oppPieces ? CAPTURE : BASIC_MOVE)) goto done;
 
         }
 
@@ -2117,7 +2237,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
             newb.nextTurn();
 
 
-            if (func(newb, rook, mm)) goto done;
+            if (func(newb, rook, mm, mm & oppPieces ? CAPTURE : BASIC_MOVE)) goto done;
 
         }
 
@@ -2144,7 +2264,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
              
             newb.nextTurn();
 
-            if (func(newb, queen, mm)) goto done;
+            if (func(newb, queen, mm, mm & oppPieces ? CAPTURE : BASIC_MOVE)) goto done;
 
         }
 
@@ -2301,9 +2421,7 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
 
 std::uint64_t Chess::perft(int depth)
 {
-    m_nEnPassents = 0;
     uint64_t nodes = _perft(m_board, depth);
-    printf("En passents: %d\n", m_nEnPassents);
     return nodes;
 }
 
@@ -2313,10 +2431,11 @@ std::uint64_t Chess::_perft(ChessBoard& board, int depth)
     
     uint64_t nodes = 0;
 
-    generateMovesFast(board, [&] (ChessBoard& b, uint64_t from, uint64_t to) {
+    generateMovesFast(board, [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type) {
         (void)from;
         (void)to;    
-       
+        (void)type;
+
         if (kingIsInCheck(b, !b.m_isWhitesTurn)) return false; 
         nodes += _perft(b, depth - 1);
         
@@ -2354,3 +2473,128 @@ std::uint64_t Chess::_perftSlow(ChessBoard& board, int depth)
     return nodes;
 }
 
+const char files[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+const char ranks[] = {'1', '2', '3', '4', '5', '6', '7', '8'};
+
+void Chess::printPrettyMove(const ChessBoard& board, const ChessMove& move)
+{
+
+    if (move.x1 == INVALID_FILE || move.y1 == INVALID_RANK)
+    {
+        printf("INVALID");
+        return;
+    }
+
+    auto piece = getPieceForSquare(board, move.x1, move.y1);
+    auto piece2 = getPieceForSquare(board, move.x2, move.y2);
+
+    switch(piece)
+    {
+        case WHITE_PAWN:
+        case BLACK_PAWN:
+            switch(piece2)
+            {
+                case NO_PIECE:
+                    printf("%c%c%c%c", files[move.x1], ranks[move.y1], files[move.x2], ranks[move.y2]);
+                    break;
+                default:
+                    printf("%c%cx%c%c", files[move.x1], ranks[move.y1], files[move.x2], ranks[move.y2]);
+                    break;
+            }
+            break;
+        case WHITE_KNIGHT:
+        case BLACK_KNIGHT:
+            switch (piece2)
+            {
+                case NO_PIECE:
+                    printf("N%c%c%c", files[move.x1], files[move.x2], ranks[move.y2]);
+                    break;
+                default:
+                    printf("N%c%xc%c", files[move.x1], files[move.x2], ranks[move.y2]);
+                    break;
+            }
+            break;
+        case WHITE_BISHOP:
+        case BLACK_BISHOP:
+            switch (piece2)
+            {
+                case NO_PIECE:
+                    printf("B%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+                default:
+                    printf("Bx%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+            }
+            break;
+        case WHITE_ROOK:
+        case BLACK_ROOK:
+            switch (piece2)
+            {
+                case NO_PIECE:
+                    printf("R%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+                default:
+                    printf("Rx%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+            }
+            break;
+        case WHITE_QUEEN:
+        case BLACK_QUEEN:
+            switch (piece2)
+            {
+                case NO_PIECE:
+                    printf("Q%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+                default:
+                    printf("Qx%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+            }
+            break;
+        case WHITE_KING:
+        case BLACK_KING:
+            switch (piece2)
+            {
+                case NO_PIECE:
+                    printf("K%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+                default:
+                    printf("Kx%c%c", files[move.x2], ranks[move.y2]);
+                    break;
+            }
+            break;
+        default:
+            printf("UNKNOWN");
+    }
+
+    switch (move.promote)
+    {
+        case PROMOTION_PROMOTE_TO_QUEEN:
+            printf("=Q");
+            break;
+        case PROMOTION_PROMOTE_TO_ROOK:
+            printf("=R");
+            break;
+        case PROMOTION_PROMOTE_TO_KNIGHT:
+            printf("=N");
+            break;    
+        case PROMOTION_PROMOTE_TO_BISHOP:
+            printf("=B");
+            break;
+        default:
+            break;
+    }
+
+    // Determine if this move is a check or a checkmate
+
+    ChessBoard b = board;
+    b.m_can_en_passant_file = board.m_can_en_passant_file;
+    bool ep, castle_kings_side, castle_queens_side;
+
+    makeMoveForBoard(b, move.x1, move.y1, move.x2, move.y2, ep, castle_kings_side, castle_queens_side, false, true);
+
+    if (kingIsInCheck(b, !board.m_isWhitesTurn))
+    {
+        if (b.m_legalMoves.size() == 0) printf("#");  
+        else printf("+");
+    }
+}
