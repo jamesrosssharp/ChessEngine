@@ -111,9 +111,25 @@ bool UI::handleAKeyDown()
                 bool ep = false;
                 bool castle_kings_side = false; 
                 bool castle_queens_side = false;
+                
+                PromotionType promote = NO_PROMOTION;
 
-                m_ch->makeMove(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y, ep, castle_kings_side, castle_queens_side);
+                if (m_ch->moveIsPromotion(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y))
+                {
+                    // Need a UI to get user's selection
+                    promote = PROMOTION_PROMOTE_TO_QUEEN;
+                }
+                m_ch->makeMove(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y, ep, castle_kings_side, castle_queens_side, promote);
+
+                // TODO: handle animation better
+                switch(promote)
+                {
+                    case PROMOTION_PROMOTE_TO_QUEEN:
+                        m_renderer->promoteToQueen(m_selected_square_x, m_selected_square_y);
+                    default: break;    
+                }
                 m_renderer->movePiece(m_selected_square_x, m_selected_square_y, m_highlighted_x, m_highlighted_y, ep, castle_kings_side, castle_queens_side);
+
                 clearLegalMoves();
                 m_square_selected = false;
                 ret = true;

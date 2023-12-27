@@ -744,9 +744,9 @@ void Chess::addPieceToSquare(ChessBoard& board, enum PieceTypes type, int x, int
     }
 }
 
-void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side)
+void Chess::makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, enum PromotionType promote)
 {
-    makeMoveForBoard(m_board, x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side, true, true);
+    makeMoveForBoard(m_board, x1, y1, x2, y2, ep, castle_kings_side, castle_queens_side, true, true, promote);
 }
 
 
@@ -2602,3 +2602,22 @@ void Chess::printPrettyMove(const ChessBoard& board, const ChessMove& move)
         else printf("+");
     }
 }
+
+bool Chess::moveIsPromotion(int x1, int y1, int x2, int y2)
+{
+    (void)x2;
+    switch (getPieceForSquare(m_board, x1, y1))
+    {
+        case WHITE_PAWN:
+            if (y2 == EIGHTH_RANK) return true;
+            break;
+        case BLACK_PAWN:
+            if (y2 == FIRST_RANK) return true;    
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+

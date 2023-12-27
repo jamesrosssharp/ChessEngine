@@ -348,7 +348,7 @@ class Chess {
         void getLegalMovesForBoardSquare(const ChessBoard& board, int x, int y, uint64_t& moveSquares);
         void printBoard(const ChessBoard& board);
 
-        void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side);
+        void makeMove(int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, PromotionType promote = NO_PROMOTION);
         void makeMoveForBoard(ChessBoard& board, int x1, int y1, int x2, int y2, bool& ep, bool& castle_kings_side, bool& castle_queens_side, 
                               bool print = true, bool recompute_legal = false, PromotionType promote = NO_PROMOTION);
 
@@ -367,6 +367,8 @@ class Chess {
 
         std::uint64_t perft(int depth);
         std::uint64_t perftSlow(int depth);
+
+        bool moveIsPromotion(int x1, int y1, int x2, int y2);
 
     protected:
 
