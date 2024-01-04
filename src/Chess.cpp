@@ -1939,7 +1939,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         // Check King side castling
         if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
             (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
-            !board.m_whiteHRookHasMoved)
+            !board.m_whiteHRookHasMoved && (getPieceForSquare(board, H_FILE, FIRST_RANK) == WHITE_ROOK))
         {
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
             {
@@ -1951,7 +1951,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
             (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
             (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
-            !board.m_whiteARookHasMoved)
+            !board.m_whiteARookHasMoved && (getPieceForSquare(board, A_FILE, FIRST_RANK) == WHITE_ROOK))
         {
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
             {
@@ -1966,7 +1966,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         // Check King side castling
         if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
             (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            !board.m_blackHRookHasMoved)
+            !board.m_blackHRookHasMoved && (getPieceForSquare(board, H_FILE, EIGHTH_RANK) == BLACK_ROOK))
         {
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, F_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
             {
@@ -1978,7 +1978,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
             (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
             (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            !board.m_blackARookHasMoved)
+            !board.m_blackARookHasMoved && (getPieceForSquare(board, A_FILE, EIGHTH_RANK) == BLACK_ROOK))
         {
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
             {
