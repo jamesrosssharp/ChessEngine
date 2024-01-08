@@ -22,7 +22,7 @@ $(TARGET): $(CPP_OBJ)
 	@echo "LNK"
 
 clean:
-	rm -r build
+	rm -r $(BUILD_DIR)
 
 run: $(TARGET)
 	./$(TARGET)

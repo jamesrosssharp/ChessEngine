@@ -99,7 +99,7 @@ bool testMagic(uint64_t bb, uint64_t magic)
 
     int count = population_count(bb);
 
-    for (int i = 0; i < (1<<count); i++)
+    for (int i = 0; i < (1<<count); i<<=1)
     {
         // Enumerate occupancy set with binary counter
         
@@ -123,17 +123,28 @@ bool testMagic(uint64_t bb, uint64_t magic)
 
         // Shift by bits in occupancy set
 
-        mult >>= count;
+        mult >>= (64 - count);
 
-        printf("m: %lx i: %x\n", mult, i);
+        //printf("m: %lx i: %x\n", mult, i);
 
         // Does resulting bit set match the generated count? If not, return false.
 
-        if (mult != (uint64_t)i) return false;
+       // if (mult != (uint64_t)i) return false;
 
     }
 
     return true;
+}
+
+uint64_t random_uint64_t() {
+  uint64_t u1, u2, u3, u4;
+  u1 = (uint64_t)(random()) & 0xFFFF; u2 = (uint64_t)(random()) & 0xFFFF;
+  u3 = (uint64_t)(random()) & 0xFFFF; u4 = (uint64_t)(random()) & 0xFFFF;
+  return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
+}
+
+uint64_t random_uint64_t_fewbits() {
+  return random_uint64_t() & random_uint64_t() & random_uint64_t();
 }
 
 int main(int argc, char** argv)
@@ -141,21 +152,23 @@ int main(int argc, char** argv)
     (void) argc;
     (void) argv;
 
-    seedRNG();
+    //seedRNG();
 
     // Compute magics for bishops
 
-    for (int sq = 5; sq < 64; sq++)
+    for (int sq = 0; sq < 64; sq++)
     {
         uint64_t bb = get_bishop_occupancy_set_for_square(sq);
 
+        printf("Bitboard: %lx\n", bb);
+
         while (true)
         {
-            uint64_t magic = gen64BitMagicNumber();
+            uint64_t magic =  random_uint64_t_fewbits(); //0x100420000431024ULL; //gen64BitMagicNumber();
     
             if (testMagic(bb, magic))
             {
-                printf("Magic found for bishop on sq %d\n", sq);
+                printf("Magic found for bishop on sq %d %lx\n", sq, magic);
                 break;
             }
 
