@@ -99,7 +99,7 @@ bool testMagic(uint64_t bb, uint64_t magic)
 
     int count = population_count(bb);
 
-    for (int i = 0; i < (1<<count); i<<=1)
+    for (int i = 1; i < (1<<count); i<<=1)
     {
         // Enumerate occupancy set with binary counter
         
@@ -115,21 +115,21 @@ bool testMagic(uint64_t bb, uint64_t magic)
             j >>= 1;
         } 
    
-        //printf("Magic: %lx bb: %lx i: %d occ: %lx\n", magic, bb, i, occupied_bb);
-
         // Multiply by magic
    
         uint64_t mult = occupied_bb * magic; 
+
+        //if (population_count(mult & 0xff00'0000'0000'0000) < 6) return false;
 
         // Shift by bits in occupancy set
 
         mult >>= (64 - count);
 
-        //printf("m: %lx i: %x\n", mult, i);
+        //printf("%ld %d\n", mult, i);
 
         // Does resulting bit set match the generated count? If not, return false.
 
-       // if (mult != (uint64_t)i) return false;
+        if (mult != (uint64_t)i) return false;
 
     }
 
@@ -152,7 +152,7 @@ int main(int argc, char** argv)
     (void) argc;
     (void) argv;
 
-    //seedRNG();
+    seedRNG();
 
     // Compute magics for bishops
 
@@ -169,6 +169,7 @@ int main(int argc, char** argv)
             if (testMagic(bb, magic))
             {
                 printf("Magic found for bishop on sq %d %lx\n", sq, magic);
+                //return 0;
                 break;
             }
 

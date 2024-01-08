@@ -12,7 +12,7 @@ HEADERS	= $(wildcard $(SRC_DIR)/*.h)
 CPP_OBJ = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(notdir $(CPP_SRC)))
 CPP_OBJ_NOMAIN = $(filter-out $(BUILD_DIR)/main.o, $(CPP_OBJ))
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS)
+$(BUILD_DIR)/%.o: $(CPP_SRC) $(HEADERS)
 	@mkdir -p $(BUILD_DIR)
 	@echo "CXX $<"
 	@g++ -std=c++20 -O3 -c -ggdb -o $@ -I$(SRC_DIR) $<
