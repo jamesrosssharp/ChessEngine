@@ -99,7 +99,10 @@ bool testMagic(uint64_t bb, uint64_t magic)
 
     int count = population_count(bb);
 
-    for (int i = 1; i < (1<<count); i<<=1)
+    
+    int used[4096] = {0};
+
+    for (int i = 1; i <= (1<<count); i<<=1)
     {
         // Enumerate occupancy set with binary counter
         
@@ -127,9 +130,15 @@ bool testMagic(uint64_t bb, uint64_t magic)
 
         //printf("%ld %d\n", mult, i);
 
+
+
         // Does resulting bit set match the generated count? If not, return false.
 
-        if (mult != (uint64_t)i) return false;
+        //if (mult != (uint64_t)i) return false;
+
+        if (used[mult] == 0) 
+            used[mult] = i;
+        else if (used[mult] != i) return false;
 
     }
 
