@@ -36,6 +36,7 @@ SOFTWARE.
 #include <vector>
 #include <chrono>
 #include <algorithm>
+#include <MagicBitboards.h>
 
 const std::vector<std::pair<int, int>> knightMoves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 const std::vector<std::pair<int, int>> pawnCaptures = {{-1, 1}, {1, 1}};
@@ -192,9 +193,10 @@ Chess::Chess()  :
     m_totalGenLegalMicroseconds(0)
 {
     computeBlockersAndBeyond();
+    m_magicbb = new MagicBitboards();
+    m_magicbb->computeTables(this);
     resetBoard();
     printBoard(m_board);
-
 }
 
 void Chess::resetBoard()
@@ -1007,7 +1009,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_BISHOP, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
+            uint64_t moves = m_magicbb->pieceAttacks(PIECE_BISHOP, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -1023,7 +1025,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_ROOK, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
+            uint64_t moves = m_magicbb->pieceAttacks(PIECE_ROOK, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -1039,7 +1041,7 @@ bool Chess::kingIsInCheck(const ChessBoard& board, bool white)
         while(bb)
         {
             uint64_t bb2 = bb & -bb; // Isolate LS1B
-            uint64_t moves = pieceAttacks(PIECE_QUEEN, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
+            uint64_t moves = m_magicbb->pieceAttacks(PIECE_QUEEN, bitScanForward(bb2), board.allWhitePieces() | board.allBlackPieces());
             if (moves & (white ? board.whiteKingsBoard : board.blackKingsBoard)) goto check;
             bb &= bb - 1;
         }
@@ -1415,7 +1417,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2, enum PromotionType& 
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
-    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 6, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 7, npos, -INFINITY, INFINITY);
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     
@@ -1716,6 +1718,8 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
 {
     bool isRoot = npos == 0;
 
+    bool oppKingDead = false;
+
     if (depth == 0)
     {
         double whiteScore = 0.0;
@@ -1763,7 +1767,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     }
 
                     return false;
-                });
+                }, oppKingDead);
 
         if (nmoves == 0)
         {
@@ -1799,7 +1803,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
         int nmoves = 0;
 
         generateMovesFast(board, 
-                [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type) 
+                [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type)
                 {
                     ChessMove mm;            
     
@@ -1819,7 +1823,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
                     }
                     
                     return false; 
-                });
+                }, oppKingDead);
         if (nmoves == 0)
         {
             double whiteScore = 0.0;
@@ -1851,7 +1855,7 @@ double Chess::minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& m
     return 0.0;
 }
 
-void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t from_bb, uint64_t to_bb, enum MoveType type)> func)
+void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t from_bb, uint64_t to_bb, enum MoveType type)> func, bool& oppKingDead)
 {
 
     uint64_t myPieces  = 0;
@@ -1937,9 +1941,10 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     {
 
         // Check King side castling
-        if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
-            !board.m_whiteHRookHasMoved && (getPieceForSquare(board, H_FILE, FIRST_RANK) == WHITE_ROOK))
+        //if ((getPieceForSquare(board, F_FILE, FIRST_RANK) == NO_PIECE) &&
+        //    (getPieceForSquare(board, G_FILE, FIRST_RANK) == NO_PIECE) &&
+        //    !board.m_whiteHRookHasMoved && (getPieceForSquare(board, H_FILE, FIRST_RANK) == WHITE_ROOK))
+        if ((allPieces & (COORD_TO_BIT(F_FILE,FIRST_RANK) | COORD_TO_BIT(G_FILE, FIRST_RANK)) == 0) && !board.m_whiteHRookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, F_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, G_FILE, FIRST_RANK, true))
             {
@@ -1948,10 +1953,12 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         }
 
         // Check Queen side castling
-        if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
-            !board.m_whiteARookHasMoved && (getPieceForSquare(board, A_FILE, FIRST_RANK) == WHITE_ROOK))
+        //if ((getPieceForSquare(board, D_FILE, FIRST_RANK) == NO_PIECE) &&
+        //    (getPieceForSquare(board, C_FILE, FIRST_RANK) == NO_PIECE) &&
+        //    (getPieceForSquare(board, B_FILE, FIRST_RANK) == NO_PIECE) &&
+        //    !board.m_whiteARookHasMoved && (getPieceForSquare(board, A_FILE, FIRST_RANK) == WHITE_ROOK))
+        
+        if ((allPieces & (COORD_TO_BIT(D_FILE,FIRST_RANK) | COORD_TO_BIT(C_FILE, FIRST_RANK) | COORD_TO_BIT(B_FILE, FIRST_RANK)) == 0) && !board.m_whiteARookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, D_FILE, FIRST_RANK, true) && !movePutsPlayerInCheck(board, E_FILE, FIRST_RANK, C_FILE, FIRST_RANK, true))
             {
@@ -1964,9 +1971,11 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     {
 
         // Check King side castling
-        if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            !board.m_blackHRookHasMoved && (getPieceForSquare(board, H_FILE, EIGHTH_RANK) == BLACK_ROOK))
+        //if ((getPieceForSquare(board, F_FILE, EIGHTH_RANK) == NO_PIECE) &&
+        //    (getPieceForSquare(board, G_FILE, EIGHTH_RANK) == NO_PIECE) &&
+        //    !board.m_blackHRookHasMoved && (getPieceForSquare(board, H_FILE, EIGHTH_RANK) == BLACK_ROOK))
+        
+        if ((allPieces & (COORD_TO_BIT(F_FILE,EIGHTH_RANK) | COORD_TO_BIT(G_FILE, EIGHTH_RANK)) == 0) && !board.m_blackHRookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, F_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, G_FILE, EIGHTH_RANK, false))
             {
@@ -1975,10 +1984,12 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
         }
 
         // Check Queen side castling
-        if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
-            !board.m_blackARookHasMoved && (getPieceForSquare(board, A_FILE, EIGHTH_RANK) == BLACK_ROOK))
+        //if ((getPieceForSquare(board, D_FILE, EIGHTH_RANK) == NO_PIECE) &&
+        //    (getPieceForSquare(board, C_FILE, EIGHTH_RANK) == NO_PIECE) &&
+        //    (getPieceForSquare(board, B_FILE, EIGHTH_RANK) == NO_PIECE) &&
+        //    !board.m_blackARookHasMoved && (getPieceForSquare(board, A_FILE, EIGHTH_RANK) == BLACK_ROOK))
+        
+        if ((allPieces & (COORD_TO_BIT(D_FILE,FIRST_RANK) | COORD_TO_BIT(C_FILE, EIGHTH_RANK) | COORD_TO_BIT(B_FILE, EIGHTH_RANK)) == 0) && !board.m_blackARookHasMoved)
         {
             if (!movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, D_FILE, EIGHTH_RANK, false) && !movePutsPlayerInCheck(board, E_FILE, EIGHTH_RANK, C_FILE, EIGHTH_RANK, false))
             {
@@ -2192,7 +2203,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     {
         uint64_t bishop = bb & -bb;
         int bishopSq = bitScanForward(bishop);
-        uint64_t moves = pieceAttacks(PIECE_BISHOP, bishopSq, allPieces);
+        uint64_t moves = m_magicbb->pieceAttacks(PIECE_BISHOP, bishopSq, allPieces);
 
         moves &= ~myPieces;
 
@@ -2219,7 +2230,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     {
         uint64_t rook = bb & -bb;
         int rookSq = bitScanForward(rook);
-        uint64_t moves = pieceAttacks(PIECE_ROOK, rookSq, allPieces);
+        uint64_t moves = m_magicbb->pieceAttacks(PIECE_ROOK, rookSq, allPieces);
 
         moves &= ~myPieces;
 
@@ -2249,7 +2260,7 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     {
         uint64_t queen = bb & -bb;
         int queenSq = bitScanForward(queen);
-        uint64_t moves = pieceAttacks(PIECE_QUEEN, queenSq, allPieces);
+        uint64_t moves = m_magicbb->pieceAttacks(PIECE_QUEEN, queenSq, allPieces);
 
         moves &= ~myPieces;
 
@@ -2271,6 +2282,9 @@ void Chess::generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard&
     }
 
 done:
+
+    oppKingDead = (board.oppKings() == 0);
+
     return;
 }
 
@@ -2395,25 +2409,25 @@ void Chess::evalBoardFaster(const ChessBoard& board, double& white_score, double
 
     if (board.m_isWhitesTurn && noMoves)
     {
-        if (kingIsInCheck(board, true))
+    //    if (kingIsInCheck(board, true))
             black_score += 9000.0; // Checkmate
-        else 
-        {
-            // Stalemate
-            white_score = 0.0;
-            black_score = 0.0;
-        }
+    //    else 
+    //    {
+    //        // Stalemate
+    //        white_score = 0.0;
+    //        black_score = 0.0;
+    //    }
     } 
     else if (!board.m_isWhitesTurn && noMoves)
     {
-        if (kingIsInCheck(board, false))
+    //    if (kingIsInCheck(board, false))
             white_score += 9000.0;  // Checkmate
-        else 
-        {
-            // Stalemate
-            white_score = 0.0;
-            black_score = 0.0;
-        }
+    //    else 
+    //    {
+    //        // Stalemate
+    //        white_score = 0.0;
+    //        black_score = 0.0;
+    //    }
     }
 
 
@@ -2431,6 +2445,8 @@ std::uint64_t Chess::_perft(ChessBoard& board, int depth)
     
     uint64_t nodes = 0;
 
+    bool oppKingDead = false;
+
     generateMovesFast(board, [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type) {
         (void)from;
         (void)to;    
@@ -2440,7 +2456,7 @@ std::uint64_t Chess::_perft(ChessBoard& board, int depth)
         nodes += _perft(b, depth - 1);
         
         return false;
-    });
+    }, oppKingDead);
 
     return nodes;
 }

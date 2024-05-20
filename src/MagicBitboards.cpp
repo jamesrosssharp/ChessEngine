@@ -1,9 +1,9 @@
 /* vim: set et ts=4 sw=4: */
 
 /*
-	Chess Engine
+	$PROJECT
 
-main.cpp: Find magics for magic bitboards
+$FILE: $DESC
 
 License: MIT License
 
@@ -29,15 +29,12 @@ SOFTWARE.
 
 */
 
-#include <vector>
-#include <cstdint>
-#include <../src/Chess.h>
-#include <stdlib.h>
+#include <MagicBitboards.h>
 
 std::vector<std::pair<int, int>> bishop_moves = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 std::vector<std::pair<int, int>> rook_moves   = {{1, 0}, {-1, 0}, { 0, 1},  {0, -1}};
 
-uint64_t get_bishop_occupancy_set_for_square(int sq)
+uint64_t MagicBitboards::get_bishop_occupancy_set_for_square(int sq)
 {
         int x1 = sq & 7;
         int y1 = sq >> 3;
@@ -65,7 +62,7 @@ uint64_t get_bishop_occupancy_set_for_square(int sq)
     return bb;
 }
 
-uint64_t get_rook_occupancy_set_for_square(int sq)
+uint64_t MagicBitboards::get_rook_occupancy_set_for_square(int sq)
 {
         int x1 = sq & 7;
         int y1 = sq >> 3;
@@ -93,21 +90,7 @@ uint64_t get_rook_occupancy_set_for_square(int sq)
     return bb;
 }
 
-
-void seedRNG()
-{
-    srandom(0x666);
-}
-
-uint64_t gen64BitMagicNumber()
-{
-    // TODO: Change this for a better random number generator
-    uint64_t r = (random() << 32) | random();
-    
-    return r;
-}
-
-int population_count(uint64_t bb)
+int MagicBitboards::population_count(uint64_t bb)
 {
     int sum = 0;
     
@@ -121,7 +104,7 @@ int population_count(uint64_t bb)
     return sum;
 }
 
-bool testMagic(uint64_t bb, uint64_t magic)
+bool MagicBitboards::testMagic(Chess* ch, int sq, bool rook, uint64_t bb, uint64_t magic)
 {
 
     // Count bits in bb
@@ -154,56 +137,66 @@ bool testMagic(uint64_t bb, uint64_t magic)
 
         // Shift by bits in occupancy set
 
-        mult >>= (64 - count);
+        //mult >>= (64 - count);
 
-        //printf("%ld %d\n", mult, i);
-
-        // Does resulting bit set match the generated count? If not, return false.
-
-        //if (mult != (uint64_t)i) return false;
+        if (rook)
+            mult >>= (64 - 12);
+        else
+            mult >>= (64 - 9);
 
         if (used[mult] == 0) 
             used[mult] = i;
         else if (used[mult] != i) 
             return false;
 
+        if (rook)
+        {
+            // Compute rook attack set and store in the table
+            uint64_t a = ch->pieceAttacks(PIECE_ROOK, sq, occupied_bb);
+            rook_lut[mult][sq] = a;
+        }
+        else
+        {
+            // Compute bishop attack set and store in the table
+            uint64_t a = ch->pieceAttacks(PIECE_BISHOP, sq, occupied_bb);
+            bishop_lut[mult][sq] = a;
+        }
+
     }
 
     return true;
 }
 
-uint64_t random_uint64_t() {
+uint64_t MagicBitboards::random_uint64_t() {
   uint64_t u1, u2, u3, u4;
   u1 = (uint64_t)(random()) & 0xFFFF; u2 = (uint64_t)(random()) & 0xFFFF;
   u3 = (uint64_t)(random()) & 0xFFFF; u4 = (uint64_t)(random()) & 0xFFFF;
   return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
 }
 
-uint64_t random_uint64_t_fewbits() {
+uint64_t MagicBitboards::random_uint64_t_fewbits() {
   return random_uint64_t() & random_uint64_t() & random_uint64_t();
 }
 
-int main(int argc, char** argv)
+
+void MagicBitboards::computeTables(Chess* ch)
 {
-    (void) argc;
-    (void) argv;
-
-    //seedRNG();
-
-    // Compute magics for rooks
 
     for (int sq = 0; sq < 64; sq++)
     {
         uint64_t bb = get_rook_occupancy_set_for_square(sq);
 
+        rook_occupancy[sq] = bb;
+
         while (true)
         {
             uint64_t magic =  random_uint64_t_fewbits(); //0x100420000431024ULL; //gen64BitMagicNumber();
     
-            if (testMagic(bb, magic))
+            if (testMagic(ch, sq, true, bb, magic))
             {
-                printf("Magic found for rook on sq %d %lx, bb = %lx\n", sq, magic, bb);
+                //printf("Magic found for rook on sq %d %lx, bb = %lx\n", sq, magic, bb);
                 //return 0;
+                rook_magics[sq] = magic;
                 break;
             }
 
@@ -217,14 +210,17 @@ int main(int argc, char** argv)
     {
         uint64_t bb = get_bishop_occupancy_set_for_square(sq);
 
+        bishop_occupancy[sq] = bb;
+
         while (true)
         {
             uint64_t magic =  random_uint64_t_fewbits(); //0x100420000431024ULL; //gen64BitMagicNumber();
     
-            if (testMagic(bb, magic))
+            if (testMagic(ch, sq, false, bb, magic))
             {
-                printf("Magic found for bishop on sq %d %lx\n", sq, magic);
+                //printf("Magic found for bishop on sq %d %lx\n", sq, magic);
                 //return 0;
+                bishop_magics[sq] = magic;
                 break;
             }
 
@@ -233,3 +229,4 @@ int main(int argc, char** argv)
     }
 
 }
+

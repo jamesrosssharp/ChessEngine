@@ -334,7 +334,7 @@ struct ChessBoard {
     std::vector<ChessMove> m_legalMoves;
 };
 
-
+class MagicBitboards;
 
 class Chess {
 
@@ -370,7 +370,7 @@ class Chess {
 
         bool moveIsPromotion(int x1, int y1, int x2, int y2);
 
-    protected:
+    public:
 
         std::uint64_t _perft(ChessBoard& board, int depth);
         std::uint64_t _perftSlow(ChessBoard& board, int depth);
@@ -381,7 +381,7 @@ class Chess {
         double minimaxAlphaBeta(const ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
         double minimaxAlphaBetaFaster(ChessBoard& board, bool white, ChessMove& move, bool maximizing, int depth, uint64_t& npos, double alpha, double beta);
 
-        void generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t, uint64_t, enum MoveType type)>);
+        void generateMovesFast(ChessBoard& board, std::function<bool (ChessBoard& b, uint64_t, uint64_t, enum MoveType type)>, bool& oppKingDead);
 
         bool movePutsPlayerInCheck(const ChessBoard& board, int x1, int y1, int x2, int y2, bool white);
         
@@ -469,4 +469,6 @@ class Chess {
         std::uint64_t m_pawnAttacksBlack[64];
 
         int m_nEnPassents;
+
+        MagicBitboards* m_magicbb;
 };
