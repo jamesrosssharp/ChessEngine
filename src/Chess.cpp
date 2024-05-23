@@ -2447,6 +2447,7 @@ std::uint64_t Chess::_perft(ChessBoard& board, int depth)
 
     bool oppKingDead = false;
 
+
     generateMovesFast(board, [&] (ChessBoard& b, uint64_t from, uint64_t to, enum MoveType type) {
         (void)from;
         (void)to;    
@@ -2457,6 +2458,8 @@ std::uint64_t Chess::_perft(ChessBoard& board, int depth)
         
         return false;
     }, oppKingDead);
+
+    //if (oppKingDead) return 0ULL;
 
     return nodes;
 }
