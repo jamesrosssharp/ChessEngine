@@ -33,31 +33,41 @@ SOFTWARE.
 
 enum BitboardIdx
 {
-    BITBOARD_INVALID1 = 0;
-    BITBOARD_INVALID2 = 1;
-    BITBOARD_WHITE_PIECES = 2;
-    BITBOARD_BLACK_PIECES = 3;
-    BITBOARD_PAWN   = 4;
-    BITBOARD_KNIGHT = 5;
-    BITBOARD_BISHOP = 6;
-    BITBOARD_ROOK   = 7;
-    BITBOARD_QUEEN  = 8;
-    BITBOARD_KING   = 9;
+    BITBOARD_INVALID1 = 0,
+    BITBOARD_INVALID2 = 1,
+    BITBOARD_WHITE_PIECES = 2,
+    BITBOARD_BLACK_PIECES = 3,
+    BITBOARD_PAWN   = 4,
+    BITBOARD_KNIGHT = 5,
+    BITBOARD_BISHOP = 6,
+    BITBOARD_ROOK   = 7,
+    BITBOARD_QUEEN  = 8,
+    BITBOARD_KING   = 9
 };
 
 struct BetaMove {
-    uint32_t sq_from : 6;
-    uint32_t sq_to   : 6;
-    uint32_t bitboard_color_from      : 2;
-    uint32_t bitboard_color_capture   : 2;
-    uint32_t from_piece               : 4;
-    uint32_t capture_piece            : 4;
+    uint32_t sq_from : 6;   // 6
+    uint32_t sq_to   : 6;   // 12
+    uint32_t bitboard_color_from      : 2;  // 14
+    uint32_t bitboard_color_capture   : 2;  // 16
+    uint32_t bitboard_color_to        : 2;  // 18
+    uint32_t from_piece               : 4;  // 22
+    uint32_t capture_piece            : 4;  // 26
+    uint32_t to_piece                 : 4;  // 30                                        
 };
+
+enum BoardTurn 
+{
+    TURN_WHITE = 0,
+    TURN_BLACK = 1
+}
 
 struct BetaBoard
 {
 
     uint64_t bitboards[10];
+    bool     turn;
+
 
     BetaBoard()
     {
@@ -69,6 +79,7 @@ struct BetaBoard
         bitboards[BITBOARD_ROOK]         = 0x8100'0000'0000'0081;
         bitboards[BITBOARD_QUEEN]        = 0x1000'0000'0000'0010;
         bitboards[BITBOARD_KING]         = 0x0800'0000'0000'0008;
+        turn = TURN_WHITE;
     } 
 
     uint64_t* whitePieces() { return &bitboards[BITBOARD_WHITE_PIECES]; }
@@ -99,15 +110,17 @@ struct BetaBoard
 
         uint64_t bbFrom = 1ULL << move.sq_from;
         uint64_t bbTo   = 1ULL << move.sq_to;
-        uint64_t bbFromTo = bbFrom ^ bbTo;
  
-        bitboards[move.bitboard_color_from]      ^= bbFromTo;
+        bitboards[move.bitboard_color_from]      ^= bbFrom;
+        bitboards[move.bitboard_color_to]        ^= bbTo;
         bitboards[move.bitboard_color_capture]   ^= bbTo;
   
-        bitboards[move.from_piece]               ^= bbFromTo;
-        bitboards[move.capture_piece]            ^= bbTo;
+        bitboards[move.from_piece]          ^= bbFrom;
+        bitboards[move.to_piece]            ^= bbTo;
+        bitboards[move.capture_piece]       ^= bbTo;
 
 
+        turn    ^= TURN_BLACK;
     }
 
     void makeMove(const struct BetaMove& move)
@@ -117,7 +130,7 @@ struct BetaBoard
 
     }
 
-    void unMakeMove(const struct BetaMove& move)
+    void unmakeMove(const struct BetaMove& move)
     {
 
         // TODO: Pop other meta data, such as can castle, can e.p etc off stack
@@ -125,7 +138,37 @@ struct BetaBoard
 
     }
 
-
-
 };
 
+
+class BetaChess {
+
+    public:
+
+        BetaChess();
+
+        uint64_t perft(int depth);
+
+    private:
+
+        /**
+         *
+         *  \return the number of moves generated
+         *
+         */
+        int generate_moves(struct BetaMove* moves)
+        {
+            // TODO: Get rid of branch
+            if (m_board.turn == TURN_WHITE)
+                return _generate_moves_white(moves);
+            else
+                return _generate_moves_black(moves);
+        }
+
+        int _generate_moves_white(struct BetaMove* moves);
+        int _generate_moves_black(struct BetaMove* moves);
+
+    private:
+
+        BetaBoard m_board;
+};
