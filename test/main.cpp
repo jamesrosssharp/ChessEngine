@@ -32,6 +32,7 @@ SOFTWARE.
 #include <gtest/gtest.h>
 
 #include "chessTest.cpp"
+#include "betaChessTest.cpp"
 
 int main(int argc, char** argv)
 {

@@ -57,11 +57,50 @@ uint64_t BetaChess::perft(int depth)
 int BetaChess::_generate_moves_white(struct BetaMove* moves)
 {
 
+    int n_moves = 0;
+    uint64_t myPieces = *m_board.whitePieces();
+
     // Pawn moves
+    for (uint64_t bb = m_board.whiteKings(); bb != 0; bb &= bb - 1)
+    {
+        uint64_t king   = bb & -bb;
+        int kingSq      = bitScanForward(king);
+        uint64_t mmoves  = m_blockers.m_pieceMoves[PIECE_KING][kingSq];
 
+        mmoves &= ~myPieces;
 
+        for (; mmoves != 0; mmoves &= mmoves - 1)
+        {
+            uint64_t m = mmoves & -mmoves; // Isolate LS1B
 
-    return 0;
+            int toSq = bitScanForward(m); // Get to square   
+
+            moves[n_moves].sq_from = kingSq;
+            moves[n_moves].sq_to   = toSq;
+
+            moves[n_moves].bitboard_color_from      = BITBOARD_WHITE_PIECES;   
+            moves[n_moves].bitboard_color_to        = BITBOARD_WHITE_PIECES;     
+            moves[n_moves].bitboard_color_capture   = BITBOARD_BLACK_PIECES;
+
+            moves[n_moves].from_piece               = BITBOARD_KING;                
+            moves[n_moves].to_piece                 = BITBOARD_KING;                 
+            
+            moves[n_moves].capture_piece            = (!!(m_board.blackPawns() & m) * BITBOARD_PAWN)     |     
+                                                      (!!(m_board.blackKnights() & m) * BITBOARD_KNIGHT) |     
+                                                      (!!(m_board.blackBishops() & m) * BITBOARD_BISHOP) |     
+                                                      (!!(m_board.blackRooks() & m) * BITBOARD_ROOK)     |     
+                                                      (!!(m_board.blackQueens() & m) * BITBOARD_QUEEN)   |     
+                                                      (!!(m_board.blackKings() & m) * BITBOARD_KING);     
+
+            moves[n_moves].flags                    = (moves[n_moves].capture_piece != 0) * IS_CAPTURE;      
+
+            n_moves++;
+
+        }
+
+    }
+
+    return n_moves;
 }
 
 int BetaChess::_generate_moves_black(struct BetaMove* moves)
