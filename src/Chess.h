@@ -38,6 +38,8 @@ SOFTWARE.
 #include <vector>
 #include <functional>
 
+#include <Pieces.h>
+
 enum PieceTypes {
     WHITE_PAWN      = 1 << 0,
     WHITE_KNIGHT    = 1 << 1,
@@ -56,39 +58,6 @@ enum PieceTypes {
     BLACK_PIECES    = BLACK_PAWN | BLACK_KNIGHT | BLACK_BISHOP | BLACK_ROOK | BLACK_KING | BLACK_QUEEN
 }; 
 
-enum SimplePieceTypes {
-    PIECE_PAWN = 0,
-    PIECE_KNIGHT = 1,
-    PIECE_BISHOP = 2,
-    PIECE_ROOK = 3,
-    PIECE_QUEEN = 4,
-    PIECE_KING = 5
-};
-
-enum Files {
-    A_FILE = 0,
-    B_FILE = 1,
-    C_FILE = 2,
-    D_FILE = 3,
-    E_FILE = 4,
-    F_FILE = 5,
-    G_FILE = 6,
-    H_FILE = 7,
-    INVALID_FILE = -1
-};
-
-enum Ranks {
-    FIRST_RANK   = 0,
-    SECOND_RANK  = 1,
-    THIRD_RANK   = 2,
-    FOURTH_RANK  = 3,
-    FIFTH_RANK   = 4,
-    SIXTH_RANK   = 5,
-    SEVENTH_RANK = 6,
-    EIGHTH_RANK   = 7,
-    INVALID_RANK = -1
-};
-
 enum MoveType {
     BASIC_MOVE = 0,
     CAPTURE    = 1,
@@ -100,9 +69,6 @@ enum MoveType {
     PROMOTE_TO_BISHOP = 7,
     PROMOTE_TO_KNIGHT = 8
 };
-
-#define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
-#define IS_IN_BOARD(file, rank) ((file >= A_FILE) && (file <= H_FILE) && (rank >= FIRST_RANK) && (rank <= EIGHTH_RANK))
 
 enum PromotionType {
     NO_PROMOTION,

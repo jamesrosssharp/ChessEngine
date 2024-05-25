@@ -1,9 +1,9 @@
 /* vim: set et ts=4 sw=4: */
 
 /*
-	$PROJECT
+    ChessEngine : A chess engine written in C++ for SDL2
 
-$FILE: $DESC
+Pieces.h: Some piece types enums
 
 License: MIT License
 
@@ -29,45 +29,41 @@ SOFTWARE.
 
 */
 
-#include <BetaChess.h>
+#pragma once
 
-uint64_t BetaChess::perft(int depth)
-{
+enum SimplePieceTypes {
+    PIECE_PAWN = 0,
+    PIECE_KNIGHT = 1,
+    PIECE_BISHOP = 2,
+    PIECE_ROOK = 3,
+    PIECE_QUEEN = 4,
+    PIECE_KING = 5
+};
 
-    if (depth == 0) return 1ULL;
+enum Files {
+    A_FILE = 0,
+    B_FILE = 1,
+    C_FILE = 2,
+    D_FILE = 3,
+    E_FILE = 4,
+    F_FILE = 5,
+    G_FILE = 6,
+    H_FILE = 7,
+    INVALID_FILE = -1
+};
 
-    struct BetaMove moves[512];
+enum Ranks {
+    FIRST_RANK   = 0,
+    SECOND_RANK  = 1,
+    THIRD_RANK   = 2,
+    FOURTH_RANK  = 3,
+    FIFTH_RANK   = 4,
+    SIXTH_RANK   = 5,
+    SEVENTH_RANK = 6,
+    EIGHTH_RANK   = 7,
+    INVALID_RANK = -1
+};
 
-    int n = generate_moves(moves);
-    int nodes = 0;
-
-    for (int i = 0; i < n; i++)
-    {
-        m_board.makeMove(moves[i]);
-
-            nodes += perft(depth - 1);
-
-        m_board.unmakeMove(moves[i]);
-
-    }
-
-    return nodes;
-}
-
-int BetaChess::_generate_moves_white(struct BetaMove* moves)
-{
-
-    // Pawn moves
-
-
-
-    return 0;
-}
-
-int BetaChess::_generate_moves_black(struct BetaMove* moves)
-{
-
-
-    return 0;
-}
+#define COORD_TO_BIT(file, rank) (1ULL << ((file) + (rank)*8))
+#define IS_IN_BOARD(file, rank) ((file >= A_FILE) && (file <= H_FILE) && (rank >= FIRST_RANK) && (rank <= EIGHTH_RANK))
 

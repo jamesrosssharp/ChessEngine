@@ -31,6 +31,8 @@ SOFTWARE.
 
 #pragma once
 
+#include <stdint.h>
+
 enum BitboardIdx
 {
     BITBOARD_INVALID1 = 0,
@@ -60,7 +62,7 @@ enum BoardTurn
 {
     TURN_WHITE = 0,
     TURN_BLACK = 1
-}
+};
 
 struct BetaBoard
 {

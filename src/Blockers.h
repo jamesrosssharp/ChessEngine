@@ -1,9 +1,9 @@
 /* vim: set et ts=4 sw=4: */
 
 /*
-	$PROJECT
+    ChessEngine : A chess engine written in C++ for SDL2
 
-$FILE: $DESC
+Blockers.h: Compute blockers and beyond lookup tables
 
 License: MIT License
 
@@ -29,45 +29,27 @@ SOFTWARE.
 
 */
 
-#include <BetaChess.h>
+#pragma once
 
-uint64_t BetaChess::perft(int depth)
+#include <Pieces.h>
+#include <cstdint>
+
+class Blockers
 {
 
-    if (depth == 0) return 1ULL;
+    public:
 
-    struct BetaMove moves[512];
+        Blockers();
 
-    int n = generate_moves(moves);
-    int nodes = 0;
+        void computeBlockersAndBeyond();
 
-    for (int i = 0; i < n; i++)
-    {
-        m_board.makeMove(moves[i]);
+        std::uint64_t m_pieceMoves[6][64];
+        std::uint64_t m_arrBlockersAndBeyond[6][64];
+        std::uint64_t m_arrBehind[64][64];
+        std::uint64_t m_pawnMovesWhite[64];
+        std::uint64_t m_pawnMovesBlack[64];
+        std::uint64_t m_pawnAttacksWhite[64];
+        std::uint64_t m_pawnAttacksBlack[64];
 
-            nodes += perft(depth - 1);
-
-        m_board.unmakeMove(moves[i]);
-
-    }
-
-    return nodes;
-}
-
-int BetaChess::_generate_moves_white(struct BetaMove* moves)
-{
-
-    // Pawn moves
-
-
-
-    return 0;
-}
-
-int BetaChess::_generate_moves_black(struct BetaMove* moves)
-{
-
-
-    return 0;
-}
+};
 
