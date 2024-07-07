@@ -40,6 +40,8 @@ SOFTWARE.
 
 #include <Pieces.h>
 
+#include <Blockers.h>
+
 enum PieceTypes {
     WHITE_PAWN      = 1 << 0,
     WHITE_KNIGHT    = 1 << 1,
@@ -436,5 +438,6 @@ class Chess {
 
         int m_nEnPassents;
 
+        Blockers m_blockers;
         MagicBitboards* m_magicbb;
 };

@@ -33,6 +33,7 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <Blockers.h>
+#include <MagicBitboards.h>
 
 enum BitboardPieceIdx
 {
@@ -164,7 +165,15 @@ class BetaChess {
 
     public:
 
-        BetaChess() { }
+        BetaChess() { 
+        
+            m_blockers.computeBlockersAndBeyond();
+            m_magicbb = new MagicBitboards();
+            m_magicbb->computeTables(&m_blockers);
+        
+        }
+
+        ~BetaChess() { delete m_magicbb; }
 
         uint64_t perft(int depth);
 
@@ -197,4 +206,5 @@ class BetaChess {
 
         BetaBoard m_board;
         Blockers  m_blockers;
+        MagicBitboards* m_magicbb;
 };

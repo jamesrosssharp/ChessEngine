@@ -32,12 +32,13 @@ SOFTWARE.
 #pragma once
 
 #include <Chess.h>
+#include <Blockers.h>
 
 class MagicBitboards {
 
     public:
 
-        void computeTables(Chess* ch);
+        void computeTables(Blockers* ch);
 
         uint64_t pieceAttacks(enum SimplePieceTypes piece, int sq, uint64_t occupied)
         {
@@ -74,7 +75,7 @@ class MagicBitboards {
         uint64_t get_bishop_occupancy_set_for_square(int sq);
         uint64_t get_rook_occupancy_set_for_square(int sq);
         int      population_count(uint64_t bb);
-        bool     testMagic(Chess* ch, int sq, bool rook, uint64_t bb, uint64_t magic);
+        bool     testMagic(Blockers* ch, int sq, bool rook, uint64_t bb, uint64_t magic);
         uint64_t random_uint64_t();
         uint64_t random_uint64_t_fewbits();
 

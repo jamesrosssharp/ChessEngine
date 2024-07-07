@@ -193,8 +193,11 @@ Chess::Chess()  :
     m_totalGenLegalMicroseconds(0)
 {
     computeBlockersAndBeyond();
+    
+    m_blockers.computeBlockersAndBeyond();
+    
     m_magicbb = new MagicBitboards();
-    m_magicbb->computeTables(this);
+    m_magicbb->computeTables(&m_blockers);
     resetBoard();
     printBoard(m_board);
 }
@@ -1417,7 +1420,7 @@ void Chess::getBestMove(int& x1, int& y1, int& x2, int& y2, enum PromotionType& 
 
     std::chrono::time_point<std::chrono::high_resolution_clock> oldTime = std::chrono::high_resolution_clock::now();
  
-    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 7, npos, -INFINITY, INFINITY);
+    double maxScore = minimaxAlphaBetaFaster(m_board, m_board.m_isWhitesTurn, m, true, 6, npos, -INFINITY, INFINITY);
 
     auto msecs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - oldTime);
     

@@ -65,4 +65,11 @@ TEST_F(BetaChessTest, TestMoveGen)
 
     printf("n moves: %d\n", n_moves);
 
-} 
+}
+
+TEST_F(BetaChessTest, TestPerft)
+{
+    RunPerft(8);
+}
+
+

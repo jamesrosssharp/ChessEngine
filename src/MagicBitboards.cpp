@@ -104,7 +104,7 @@ int MagicBitboards::population_count(uint64_t bb)
     return sum;
 }
 
-bool MagicBitboards::testMagic(Chess* ch, int sq, bool rook, uint64_t bb, uint64_t magic)
+bool MagicBitboards::testMagic(Blockers* ch, int sq, bool rook, uint64_t bb, uint64_t magic)
 {
 
     // Count bits in bb
@@ -179,7 +179,7 @@ uint64_t MagicBitboards::random_uint64_t_fewbits() {
 }
 
 
-void MagicBitboards::computeTables(Chess* ch)
+void MagicBitboards::computeTables(Blockers* ch)
 {
 
     for (int sq = 0; sq < 64; sq++)

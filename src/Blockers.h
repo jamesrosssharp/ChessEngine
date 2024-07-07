@@ -43,6 +43,21 @@ class Blockers
 
         void computeBlockersAndBeyond();
 
+        uint64_t pieceAttacks(enum SimplePieceTypes  piece, int sq, uint64_t occupied)
+        {
+            // First, get piece moves
+            uint64_t moves = m_pieceMoves[piece][sq];
+
+            // Compute blockers
+            for (uint64_t bb = occupied & m_arrBlockersAndBeyond[piece][sq]; bb != 0; bb &= bb - 1)
+            {
+                int sq2 = bitScanForward(bb);
+                moves &= ~m_arrBehind[sq][sq2];
+            }
+
+            return moves;
+        }
+
         std::uint64_t m_pieceMoves[6][64];
         std::uint64_t m_arrBlockersAndBeyond[6][64];
         std::uint64_t m_arrBehind[64][64];
@@ -51,5 +66,11 @@ class Blockers
         std::uint64_t m_pawnAttacksWhite[64];
         std::uint64_t m_pawnAttacksBlack[64];
 
+    private:
+
+        static int bitScanForward(uint64_t bb)
+        {
+            return __builtin_ctzll(bb);
+        }
 };
 
